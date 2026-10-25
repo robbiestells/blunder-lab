@@ -109,9 +109,9 @@ details summary{cursor:pointer;color:var(--muted);font-size:.9rem}
 <div class="wrap">
   <header>
     <div>
-      <div class="eyebrow">Rapid games · robbiestells</div>
+      <div class="eyebrow">chess.com · robbiestells</div>
       <h1>Blunder Lab</h1>
-      <p>Your recent rapid games, checked by Stockfish in your browser. The biggest swings become puzzles: find the move you missed.</p>
+      <p>Your recent chess.com games, checked by Stockfish in your browser. The biggest swings become puzzles: find the move you missed.</p>
     </div>
   </header>
 
@@ -120,9 +120,9 @@ details summary{cursor:pointer;color:var(--muted);font-size:.9rem}
     <div style="display:grid;gap:14px">
       <div class="row">
         <label class="f">Username<input type="text" id="user" value="robbiestells" autocomplete="off" spellcheck="false"></label>
-        <label class="f">Recent games<select id="count"><option>5</option><option selected>8</option><option>12</option><option>20</option></select></label>
+        <label class="f">Recent games<select id="count"><option>5</option><option selected>8</option><option>12</option><option>20</option><option>40</option></select></label>
         <label class="f">Depth<select id="depth"><option value="350">Quick</option><option value="800" selected>Normal</option><option value="1600">Deep</option></select></label>
-        <label class="f" style="align-self:end"><span class="row" style="gap:6px"><input type="checkbox" id="only1510"> Only 15 | 10</span></label>
+        <label class="f">Time control<select id="tc"><option value="rapid" selected>Rapid</option><option value="1510">Rapid 15 | 10 only</option><option value="blitz">Blitz</option><option value="bullet">Bullet</option><option value="daily">Daily</option><option value="all">All games</option></select></label>
       </div>
       <div class="row">
         <button class="primary" id="go">Fetch and analyze rapid games</button>
@@ -130,7 +130,11 @@ details summary{cursor:pointer;color:var(--muted);font-size:.9rem}
         <button id="stop" hidden>Stop</button>
       </div>
       <div class="progress" aria-hidden="true"><i id="bar"></i></div>
-      <div id="msg" role="status" class="muted">Pulls your newest rapid games straight from chess.com. Analysis runs in this browser.</div>
+      <div id="msg" role="status" class="muted">Pulls your newest games straight from chess.com. Everything is saved in this browser, so repeat visits are fast.</div>
+      <div class="row" style="justify-content:space-between">
+        <span class="muted mono" id="saved" style="font-size:.8rem" aria-live="polite"></span>
+        <button id="clear" style="padding:5px 10px;font-size:.8rem">Clear saved data</button>
+      </div>
       <details>
         <summary>Fetch didn't work? Use a PGN file instead</summary>
         <div style="display:grid;gap:10px;margin-top:10px">
@@ -182,7 +186,6 @@ details summary{cursor:pointer;color:var(--muted);font-size:.9rem}
 (function(){
 "use strict";
 const $=id=>document.getElementById(id);
-const STORE="blunderlab.v1";
 const SF_URLS=["https://cdnjs.cloudflare.com/ajax/libs/stockfish.js/10.0.2/stockfish.js","https://cdn.jsdelivr.net/npm/stockfish.js@10.0.2/stockfish.js","https://unpkg.com/stockfish.js@10.0.2/stockfish.js"];
 const GLYPH={k:"♚",q:"♛",r:"♜",b:"♝",n:"♞",p:"♟"};
 const TAGS={
@@ -211,9 +214,52 @@ const SAMPLE=`[Event "Live Chess"]
 let state={user:"robbiestells",games:{},order:[],puzzles:[],solved:{},cur:-1};
 let running=false, stopFlag=false;
 
-/* ---------- storage ---------- */
-function save(){try{localStorage.setItem(STORE,JSON.stringify({user:state.user,games:state.games,order:state.order,solved:state.solved}))}catch(e){}}
-function load(){try{const s=JSON.parse(localStorage.getItem(STORE)||"null");if(s&&s.games){state.games=s.games;state.order=s.order||[];state.solved=s.solved||{};if(s.user){state.user=s.user;$("user").value=s.user}}}catch(e){}}
+/* ---------- storage: IndexedDB, with an in-memory fallback ---------- */
+const DB_NAME="blunderlab",STORES=["games","solved","months","meta"];
+const KEYS={games:"key",solved:"id",months:"url",meta:"k"};
+const mem={games:new Map(),solved:new Map(),months:new Map(),meta:new Map()};
+let dbp=null,persist=true;
+function openDb(){
+  if(dbp)return dbp;
+  dbp=new Promise(res=>{
+    try{
+      const rq=indexedDB.open(DB_NAME,1);
+      rq.onupgradeneeded=()=>{const d=rq.result;STORES.forEach(s=>{if(!d.objectStoreNames.contains(s))d.createObjectStore(s,{keyPath:KEYS[s]})})};
+      rq.onsuccess=()=>res(rq.result);
+      rq.onerror=()=>res(null);rq.onblocked=()=>res(null);
+    }catch(e){res(null)}
+  });
+  return dbp;
+}
+function idb(store,mode,make){
+  return openDb().then(d=>new Promise(res=>{
+    if(!d)return res(undefined);
+    try{const rq=make(d.transaction(store,mode).objectStore(store));rq.onsuccess=()=>res(rq.result);rq.onerror=()=>res(undefined)}catch(e){res(undefined)}
+  }));
+}
+async function dbPut(s,v){mem[s].set(v[KEYS[s]],v);await idb(s,"readwrite",o=>o.put(v))}
+async function dbGet(s,k){const d=await openDb();if(!d)return mem[s].get(k);return idb(s,"readonly",o=>o.get(k))}
+async function dbAll(s){const d=await openDb();if(!d)return [...mem[s].values()];return (await idb(s,"readonly",o=>o.getAll()))||[]}
+async function dbClear(s){mem[s].clear();await idb(s,"readwrite",o=>o.clear())}
+const saveGame=g=>persist?dbPut("games",g):0;
+const saveSolved=id=>persist?dbPut("solved",{id,t:Date.now()}):0;
+const saveMeta=()=>persist?dbPut("meta",{k:"last",user:state.user,order:state.order,tc:$("tc").value,count:$("count").value,depth:$("depth").value}):0;
+async function load(){
+  const [games,solved,last]=await Promise.all([dbAll("games"),dbAll("solved"),dbGet("meta","last")]);
+  games.forEach(g=>{state.games[g.key]=g});solved.forEach(s=>{state.solved[s.id]=1});
+  if(last){
+    if(last.user){state.user=last.user;$("user").value=last.user}
+    if(last.tc)$("tc").value=last.tc;
+    if(last.count)$("count").value=last.count;
+    if(last.depth)$("depth").value=last.depth;
+    state.order=(last.order||[]).filter(k=>state.games[k]);
+  }
+  updateSaved();
+}
+function updateSaved(){
+  const n=Object.values(state.games).filter(g=>!g.sample).length,m=Object.keys(state.solved).length;
+  $("saved").textContent=`${n} game${n===1?"":"s"} saved · ${m} puzzle${m===1?"":"s"} solved`;
+}
 
 /* ---------- month links ---------- */
 function renderLinks(){
@@ -252,12 +298,16 @@ function parseOne(txt){
   if(!headers.White||!sans.length)return null;
   return {headers,sans};
 }
+const FILTER_LABEL={rapid:"rapid",1510:"15 | 10",blitz:"blitz",bullet:"bullet",daily:"daily",all:"any type"};
 function tcInfo(tc){
-  if(!tc||tc.includes("/"))return {rapid:false,label:tc||"?"};
+  if(!tc)return {cls:"unknown",is1510:false,label:"?"};
+  if(tc.includes("/"))return {cls:"daily",is1510:false,label:"Daily"};
   const [b,i]=tc.split("+").map(Number);const base=b||0,inc=i||0;
   const est=base+40*inc;
-  return {rapid:est>=600&&est<3600,is1510:base===900&&inc===10,label:`${Math.round(base/60)}|${inc}`};
+  const cls=est<180?"bullet":est<600?"blitz":"rapid";
+  return {cls,is1510:base===900&&inc===10,label:`${Math.round(base/60)}|${inc}`};
 }
+function isStandard(g){const h=g.headers;return !(h.Variant&&!/^chess$/i.test(h.Variant))&&h.SetUp!=="1"}
 function gameKey(g){return g.headers.Link||g.headers.Site+"|"+(g.headers.UTCDate||g.headers.Date)+"|"+(g.headers.UTCTime||"")+"|"+g.headers.White+"|"+g.headers.Black}
 function gameTime(g){const d=(g.headers.UTCDate||g.headers.Date||"0000.00.00").replace(/\./g,"-"),t=g.headers.UTCTime||g.headers.EndTime||"00:00:00";const ms=Date.parse(d+"T"+t+"Z");return isNaN(ms)?0:ms}
 
@@ -366,30 +416,32 @@ async function analyzeGame(g,color,ms,onProg){
 
 function resultFor(h,color){const r=h.Result;if(r==="1/2-1/2")return "D";if(r==="1-0")return color==="w"?"W":"L";if(r==="0-1")return color==="b"?"W":"L";return "D"}
 
-async function run(text){
+async function run(text,opts={}){
   if(running)return;
   const user=($("user").value||"").trim();if(!user){setMsg("Enter your chess.com username first.",true);return}
+  const filter=opts.filter||$("tc").value;persist=opts.persist!==false;
   state.user=user;renderLinks();
   const all=splitPgn(text);
   if(!all.length){setMsg("No games found in that PGN. Make sure it starts with [Event …] headers.",true);return}
-  const lu=user.toLowerCase();const only=$("only1510").checked;
-  const mine=all.filter(g=>[g.headers.White,g.headers.Black].some(n=>(n||"").toLowerCase()===lu));
-  if(!mine.length){setMsg(`None of these games list “${user}” as a player. Check the username.`,true);return}
-  const rapid=mine.filter(g=>{const t=tcInfo(g.headers.TimeControl);return only?t.is1510:t.rapid});
-  if(!rapid.length){setMsg(`Found ${mine.length} of your games but none are ${only?"15 | 10":"rapid"}.`,true);return}
+  const lu=user.toLowerCase();
+  const mine=all.filter(g=>[g.headers.White,g.headers.Black].some(n=>(n||"").toLowerCase()===lu)&&isStandard(g));
+  if(!mine.length){setMsg(`None of these standard games list “${user}” as a player. Check the username.`,true);return}
+  const pool=mine.filter(g=>{const t=tcInfo(g.headers.TimeControl);return filter==="all"||(filter==="1510"?t.is1510:t.cls===filter)});
+  if(!pool.length){setMsg(`Found ${mine.length} of your games but none are ${FILTER_LABEL[filter]}.`,true);return}
   const n=parseInt($("count").value,10);
-  const pick=rapid.sort((a,b)=>gameTime(b)-gameTime(a)).slice(0,n);
+  const pick=pool.sort((a,b)=>gameTime(b)-gameTime(a)).slice(0,n);
+  const kf=g=>lu+"|"+gameKey(g);
+  const ms=parseInt($("depth").value,10);
   running=true;stopFlag=false;$("go").disabled=true;$("sample").disabled=true;$("stop").hidden=false;
+  state.order=pick.map(kf);state.cur=-1;
+  const todo=pick.filter(g=>{const s=state.games[kf(g)];return !s||s.ms<ms});
+  renderAll();updateSaved();saveMeta();
+  if(!todo.length){setMsg(`All ${pick.length} games were already analyzed and saved, so this was instant.`);$("bar").style.width="100%";finish();return}
   setMsg("Loading Stockfish…");
   try{await Engine.init()}catch(e){setMsg(e.message,true);finish();return}
-  const ms=parseInt($("depth").value,10);
-  state.order=pick.map(gameKey);
-  const todo=pick.filter(g=>!state.games[gameKey(g)]||state.games[gameKey(g)].ms<ms);
-  renderAll();
   let k=0;
-  for(const g of pick){
-    const key=gameKey(g);
-    if(state.games[key]&&state.games[key].ms>=ms)continue;
+  for(const g of todo){
+    const key=kf(g);
     k++;
     const color=(g.headers.White||"").toLowerCase()===lu?"w":"b";
     const label=`Game ${k} of ${todo.length}`;
@@ -397,10 +449,10 @@ async function run(text){
     if(!res)break;
     state.games[key]={key,ms,color,white:g.headers.White,black:g.headers.Black,result:resultFor(g.headers,color),
       date:g.headers.UTCDate||g.headers.Date||"",tc:tcInfo(g.headers.TimeControl).label,link:/^https?:/.test(g.headers.Link||"")?g.headers.Link:"",
-      t:gameTime(g),...res};
-    save();renderAll();
+      t:gameTime(g),sample:!!opts.sample,...res};
+    saveGame(state.games[key]);updateSaved();renderAll();
   }
-  setMsg(stopFlag?"Stopped. Finished games are kept.":`Done. ${state.puzzles.length} puzzles from ${state.order.filter(k=>state.games[k]).length} rapid games.`);
+  setMsg(stopFlag?"Stopped. Finished games are saved.":`Done. ${state.puzzles.length} puzzles from ${state.order.filter(k=>state.games[k]).length} games.`);
   $("bar").style.width="100%";
   finish();
 }
@@ -430,7 +482,7 @@ function renderAll(){
   if(state.puzzles.length){
     const i=prevId?state.puzzles.findIndex(p=>p.id===prevId):-1;
     if(i>=0)state.cur=i;else{const f=state.puzzles.findIndex(p=>!state.solved[p.id]);openPuzzle(f>=0?f:0)}
-  }
+  }else clearTrainer();
   $("pzCount").textContent=`${Object.keys(state.solved).filter(id=>state.puzzles.some(p=>p.id===id)).length} / ${state.puzzles.length} solved`;
 }
 function renderIssues(issues){
@@ -466,6 +518,14 @@ function renderGames(){
 
 /* ---------- trainer ---------- */
 let pzGame=null,sel=null,hintSq=null,lastMv=null,orient="w",locked=false,solvedNow=false;
+function clearTrainer(){
+  pzGame=null;state.cur=-1;
+  $("who").textContent="Puzzles appear here as games finish.";
+  $("ctx").textContent="Each game gives you its 1–2 worst moments. Your job is to find the move Stockfish wanted.";
+  $("fb").className="feedback info";$("fb").textContent="";$("pv").textContent="";
+  ["hint","reveal","retry","next"].forEach(id=>{$(id).disabled=true});
+  drawBoard();
+}
 function openPuzzle(i){
   const p=state.puzzles[i];if(!p)return;
   state.cur=i;pzGame=new Chess(p.fen);sel=null;hintSq=null;locked=false;solvedNow=false;orient=p.color;
@@ -532,7 +592,7 @@ async function attempt(from,to,p){
   setTimeout(()=>{pzGame.undo();lastMv=null;locked=false;drawBoard()},900);
 }
 function solved(p,exact){
-  solvedNow=true;state.solved[p.id]=1;save();
+  solvedNow=true;state.solved[p.id]=1;saveSolved(p.id);updateSaved();
   const fb=$("fb");fb.className="feedback ok";
   fb.textContent=exact?`Correct: ${p.bestSan}.`:`Good move. Stockfish's top choice was ${p.bestSan}, but yours holds the position too.`;
   showLine(p,exact);renderGames();
@@ -565,19 +625,31 @@ async function getJson(url){
   if(!r.ok)throw new Error("HTTP "+r.status);
   return r.json();
 }
-async function fetchPgn(user,n,only){
+function monthInfo(url){const m=url.match(/\/(\d{4})\/(\d{2})$/);return m?{y:+m[1],m:+m[2]}:null}
+function isFinalMonth(url){
+  const i=monthInfo(url);if(!i)return false;
+  const n=new Date(),cy=n.getUTCFullYear(),cm=n.getUTCMonth()+1;
+  return i.y<cy||(i.y===cy&&i.m<cm);
+}
+// Past months never change, so they are fetched once and kept. The current month is refetched each time.
+async function loadMonth(url){
+  const cached=await dbGet("months",url);
+  if(cached&&cached.final)return cached.games;
+  const {games}=await getJson(url);
+  const slim=games.map(g=>({pgn:g.pgn,cls:g.time_class,tc:g.time_control,rules:g.rules})).filter(g=>g.pgn);
+  await dbPut("months",{url,final:isFinalMonth(url),games:slim,t:Date.now()});
+  return slim;
+}
+async function fetchPgn(user,n,filter){
   const base="https://api.chess.com/pub/player/"+encodeURIComponent(user.toLowerCase());
   const {archives}=await getJson(base+"/games/archives");
   if(!archives||!archives.length)throw new Error("NOGAMES");
+  const want=g=>g.rules==="chess"&&(filter==="all"||(filter==="1510"?g.tc==="900+10":g.cls===filter));
   const out=[];let counted=0;
-  for(const url of archives.slice().reverse().slice(0,6)){
-    setMsg("Fetching "+url.split("/").slice(-2).join("-")+"…");
-    const {games}=await getJson(url);
-    for(const g of games.slice().reverse()){
-      if(g.rules!=="chess"||g.time_class!=="rapid"||!g.pgn)continue;
-      out.push(g.pgn);
-      if(!only||g.time_control==="900+10")counted++;
-    }
+  for(const url of archives.slice().reverse().slice(0,12)){
+    setMsg("Loading "+url.split("/").slice(-2).join("-")+"…");
+    const games=await loadMonth(url);
+    for(const g of games.slice().reverse()){if(want(g)){out.push(g.pgn);counted++}}
     if(counted>=n)break;
   }
   return out.join("\n\n");
@@ -587,7 +659,7 @@ $("go").onclick=async()=>{
   const user=($("user").value||"").trim();if(!user){setMsg("Enter your chess.com username first.",true);return}
   $("go").disabled=true;
   let text;
-  try{text=await fetchPgn(user,parseInt($("count").value,10),$("only1510").checked)}
+  try{text=await fetchPgn(user,parseInt($("count").value,10),$("tc").value)}
   catch(e){
     $("go").disabled=false;
     if(e.message==="NOTFOUND")setMsg(`chess.com has no player named “${user}”.`,true);
@@ -595,7 +667,7 @@ $("go").onclick=async()=>{
     else setMsg("Couldn't reach chess.com from this page. Open “Fetch didn't work?” below and use a PGN file.",true);
     return;
   }
-  if(!text){$("go").disabled=false;setMsg("No recent rapid games found for that account.",true);return}
+  if(!text){$("go").disabled=false;setMsg("No recent games found for that account and time control.",true);return}
   run(text);
 };
 $("goFile").onclick=async()=>{
@@ -605,7 +677,21 @@ $("goFile").onclick=async()=>{
   if(!text){setMsg("Add a PGN file from one of the month links, or paste PGN text.",true);return}
   run(text);
 };
-$("sample").onclick=async()=>{const prev=$("user").value;$("user").value="Sample Player";$("only1510").checked=false;await run(SAMPLE);$("user").value=prev;state.user=prev;save();renderLinks()};
+$("sample").onclick=async()=>{
+  const prev=$("user").value;$("user").value="Sample Player";
+  await run(SAMPLE,{filter:"all",persist:false,sample:true});
+  $("user").value=prev;state.user=prev;renderLinks();
+};
+let clearArm=0;
+$("clear").onclick=async()=>{
+  if(running)return;
+  const b=$("clear");
+  if(!clearArm){clearArm=setTimeout(()=>{clearArm=0;b.textContent="Clear saved data"},4000);b.textContent="Click again to erase";return}
+  clearTimeout(clearArm);clearArm=0;b.textContent="Clear saved data";
+  for(const s of STORES)await dbClear(s);
+  state.games={};state.order=[];state.solved={};state.puzzles=[];state.cur=-1;
+  renderAll();updateSaved();setMsg("Saved games, puzzles and progress erased.");
+};
 $("stop").onclick=()=>{stopFlag=true;setMsg("Stopping after the current position…")};
 
 /* ---------- boot ---------- */
@@ -616,8 +702,13 @@ function boot(){
     if(!boot.tried){boot.tried=1;document.head.appendChild(s);return}
     return;
   }
-  load();renderLinks();drawBoard();
-  if(state.order.some(k=>state.games[k])){renderAll();setMsg(`Loaded your last analysis: ${state.order.filter(k=>state.games[k]).length} games. Add a newer PGN to refresh.`)}
+  start();
+}
+async function start(){
+  await load();renderLinks();drawBoard();
+  const have=state.order.filter(k=>state.games[k]).length;
+  if(have){renderAll();setMsg(`Loaded ${have} saved games from your last visit. Pick a time control and fetch to refresh.`)}
+  try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
 }
 boot();
 })();
