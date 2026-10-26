@@ -89,8 +89,8 @@ a{color:var(--accent)}
 @media (max-width:560px){.panel{padding:0 14px 16px}.ph{margin:0 -14px;padding:12px 14px 8px}}
 .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .main{display:grid;gap:30px;grid-template-columns:minmax(0,1fr)}
-@media (min-width:980px){.main{grid-template-columns:repeat(12,minmax(0,1fr))}.main>.trainer{grid-column:span 7}.main>.side{grid-column:span 5}}
-.side{display:grid;gap:30px;align-content:start;min-width:0}
+@media (min-width:980px){.main{grid-template-columns:repeat(12,minmax(0,1fr))}.main>.left{grid-column:span 7}.main>.side{grid-column:span 5}}
+.side,.left{display:grid;gap:30px;align-content:start;min-width:0}
 
 /* form fields, like the header of a scoresheet */
 .setup{display:grid;gap:22px 40px}
@@ -295,6 +295,7 @@ table.t{border-collapse:collapse;font-size:.88rem;width:100%}
   </section>
 
   <div class="main" id="puzzles" data-page="train">
+    <div class="left">
     <section class="panel trainer" aria-labelledby="pz-h">
       <div class="ph"><h2 id="pz-h">Puzzle</h2><span class="eyebrow" id="pzCount">0 / 0 solved</span></div>
       <div class="prompt">
@@ -312,6 +313,16 @@ table.t{border-collapse:collapse;font-size:.88rem;width:100%}
         <button class="primary" id="next" disabled>Next puzzle</button>
       </div>
     </section>
+    <section class="panel" aria-labelledby="mk-h">
+      <div class="ph"><h2 id="mk-h">Key to marks</h2></div>
+      <dl class="marks">
+        <div><dt><span class="pen">??</span></dt><dd>Blunder. You gave up 30% or more of your win chance.</dd></div>
+        <div><dt><span class="pen">?</span></dt><dd>Mistake. You gave up 18% to 30%.</dd></div>
+        <div><dt><span class="pen">?!</span></dt><dd>Dubious. You gave up 10% to 18%.</dd></div>
+        <div><dt><span class="pen ok">!</span></dt><dd>Puzzle solved.</dd></div>
+      </dl>
+    </section>
+    </div>
 
     <div class="side">
       <section class="panel" aria-labelledby="gh-h">
@@ -321,15 +332,6 @@ table.t{border-collapse:collapse;font-size:.88rem;width:100%}
       <section class="panel" aria-labelledby="is-h">
         <div class="ph"><h2 id="is-h">Common issues</h2><span class="eyebrow">by win chance lost</span></div>
         <div class="issues" id="issues"><div class="empty">Once games are analyzed, mistakes are grouped by type here so you can see which habit costs you the most.</div></div>
-      </section>
-      <section class="panel" aria-labelledby="mk-h">
-        <div class="ph"><h2 id="mk-h">Key to marks</h2></div>
-        <dl class="marks">
-          <div><dt><span class="pen">??</span></dt><dd>Blunder. You gave up 30% or more of your win chance.</dd></div>
-          <div><dt><span class="pen">?</span></dt><dd>Mistake. You gave up 18% to 30%.</dd></div>
-          <div><dt><span class="pen">?!</span></dt><dd>Dubious. You gave up 10% to 18%.</dd></div>
-          <div><dt><span class="pen ok">!</span></dt><dd>Puzzle solved.</dd></div>
-        </dl>
       </section>
     </div>
   </div>
