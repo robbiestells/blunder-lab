@@ -80,7 +80,7 @@ a{color:var(--accent)}
 .nav{display:flex;flex-wrap:wrap;gap:6px 18px}
 .nav a{font:500 .76rem/1 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ink);text-decoration:none;padding:4px 2px;border-bottom:2px solid var(--ink)}
 .nav a:hover{background:var(--hi);color:#151b33}
-.nav a[aria-current="page"]{background:var(--ink);color:var(--surface)}
+.nav a[aria-current="page"]{color:#151b33}
 .intro{margin:0;max-width:44ch;font-size:1.08rem}
 
 /* panels */
@@ -245,7 +245,107 @@ table.t{border-collapse:collapse;font-size:.88rem;width:100%}
 @media (max-width:560px){.hb-m{grid-template-columns:minmax(0,1fr)}.hb-m .val{text-align:left}}
 .hlist-un{margin:10px 0 0;padding-left:1.3em;display:grid;gap:5px;color:var(--muted);font-size:.9rem}
 .hhow{display:grid;gap:10px;margin:10px 0 0}.hhow dt{font-weight:700;font-size:.9rem}.hhow dd{margin:2px 0 0;color:var(--muted);font-size:.86rem}
-@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+.bw{position:relative;width:100%;max-width:560px;margin:6px 0 4px}
+.bw .board{margin:0}
+.bw.shake{animation:shake .38s}
+.bw.thud{animation:thud .22s}
+@keyframes shake{20%{transform:translateX(-7px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(3px)}}
+@keyframes thud{40%{transform:translateY(4px) scale(.995)}}
+@keyframes pdraw{0%{stroke-dashoffset:1;opacity:0}2%{opacity:1}100%{stroke-dashoffset:0;opacity:1}}
+@keyframes fadein{from{opacity:0}}
+@keyframes write{from{clip-path:inset(0 100% 0 0)}}
+.pd{stroke-dasharray:1;stroke-dashoffset:0;animation:pdraw var(--t,.3s) ease-out var(--d,0s) backwards}
+.ov{position:absolute;left:2px;top:2px;width:calc(100% - 4px);height:calc(100% - 4px);pointer-events:none;overflow:visible}
+.ov path{fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-width:.17;stroke-dasharray:1;stroke-dashoffset:0;opacity:.92}
+.ov .good{stroke:var(--good)}.ov .bad{stroke:var(--pen)}
+.ov .shaft{animation:pdraw .5s ease-out var(--d,0s) backwards}
+.ov .head{animation:pdraw .18s ease-out calc(var(--d,0s) + .42s) backwards}
+.ov circle.ring{fill:none;stroke:var(--pen);stroke-width:.09;transform-box:fill-box;transform-origin:center;animation:ringpulse 1.1s ease-in-out infinite}
+@keyframes ringpulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.14);opacity:.5}}
+.mk-svg{display:block;width:100%;height:100%;overflow:visible;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.penwrap{display:inline-block;width:64px;height:35px;vertical-align:middle;color:var(--pen);transform:rotate(-4deg)}
+.stamp{position:absolute;right:2.5%;bottom:2.5%;width:27%;aspect-ratio:80/44;color:var(--good);pointer-events:none;transform:rotate(-9deg)}
+.stamp[hidden]{display:none}
+.stamp:not([hidden]){animation:stampin .55s cubic-bezier(.2,1.5,.35,1) backwards}
+.stamp .mk-svg{stroke-width:3.6}
+.stamp::after{content:"";position:absolute;inset:6% 4%;border-radius:50%;box-shadow:0 0 0 0 currentColor;opacity:0;animation:bleed .8s ease-out .28s backwards}
+@keyframes stampin{0%{transform:scale(2.6) rotate(-26deg);opacity:0}55%{opacity:1}}
+@keyframes bleed{0%{box-shadow:0 0 0 0 currentColor;opacity:.5}100%{box-shadow:0 0 0 20px transparent;opacity:0}}
+.sq.mine{touch-action:none}
+.sq.sel>.pw,.sq.sel>.pb{transform:translateY(-8%) scale(1.12);filter:drop-shadow(0 4px 2px rgba(0,0,0,.35));animation:lift .16s ease-out}
+@keyframes lift{from{transform:none;filter:none}}
+.sq.sel.drag>.pw,.sq.sel.drag>.pb{opacity:.22;transform:none;filter:none;animation:none}
+.sq.anim{overflow:visible;z-index:3}
+.ghostpc{position:fixed;z-index:70;pointer-events:none;line-height:1;transform:translate(-50%,-58%) scale(1.25);filter:drop-shadow(0 8px 5px rgba(0,0,0,.35))}
+.tally{display:block;min-height:34px;margin-top:-4px}
+.tally svg{display:block;max-width:100%;height:34px;overflow:visible}
+.tl{fill:none;stroke:var(--ink);stroke-width:2.4;stroke-linecap:round;stroke-dasharray:1;stroke-dashoffset:0}
+.tl.off{opacity:.45;stroke-dasharray:.1 .22}
+.tl.fresh{animation:pdraw .45s ease-out}
+.why strong{animation:write .7s ease-out backwards}
+.mast h1:hover .nag{animation:wobble .7s ease-in-out}
+@keyframes wobble{0%,100%{transform:translateY(-.5em) rotate(-9deg)}20%{transform:translateY(-.62em) rotate(8deg)}40%{transform:translateY(-.5em) rotate(-20deg)}60%{transform:translateY(-.58em) rotate(4deg)}80%{transform:translateY(-.5em) rotate(-12deg)}}
+.think{display:grid;grid-template-columns:auto 14px minmax(0,1fr);gap:14px;align-items:stretch;border-top:1px dashed var(--line);padding-top:14px}
+.think[hidden]{display:none}
+.tb{position:relative;width:min(220px,46vw);aspect-ratio:1;display:grid;grid-template-columns:repeat(8,minmax(0,1fr));grid-template-rows:repeat(8,minmax(0,1fr));border:2px solid var(--ink);overflow:hidden}
+.tb i{display:flex;align-items:center;justify-content:center;font:normal clamp(11px,3.5vw,19px)/1 var(--f-piece);background:var(--sq-light);min-width:0;min-height:0}
+.tb i.d{background:var(--sq-dark)}
+.tov{left:0;top:0;width:100%;height:100%}
+.tov .shaft{animation-duration:.26s}.tov .head{animation-duration:.1s;animation-delay:.2s}
+.evbar{position:relative;width:14px;border:2px solid var(--ink);background:#151b33;overflow:hidden}
+.evbar b{position:absolute;left:0;right:0;bottom:0;height:50%;background:#f4f2dc;transition:height .4s cubic-bezier(.3,1.5,.5,1)}
+.tstat{display:grid;gap:6px;align-content:center;min-width:0}
+.tstat .tw{font:700 1.7rem/1 var(--f-hand);color:var(--pen)}
+.tstat .tev{font:800 1.5rem/1 var(--f-mono);font-variant-numeric:tabular-nums}
+.tstat .tline{font:500 .82rem/1.4 var(--f-mono);overflow-wrap:anywhere;color:var(--muted);min-height:2.8em}
+.tdots::after{content:"";animation:dots 1.2s steps(4) infinite}
+@keyframes dots{0%{content:""}25%{content:"."}50%{content:".."}75%{content:"..."}}
+.report.off{display:none!important}
+.rc{display:grid;grid-template-columns:auto auto minmax(0,1fr);gap:18px 30px;align-items:center;padding-top:6px}
+@media (max-width:700px){.rc{grid-template-columns:auto minmax(0,1fr)}.rc-note{grid-column:1/-1}}
+.rc-num{display:flex;align-items:baseline;gap:4px;flex-wrap:wrap}
+.rc-num b{font:900 clamp(3rem,10vw,4.6rem)/.9 var(--f-display);font-variant-numeric:tabular-nums}
+.rc-num span{font:800 1.6rem var(--f-display)}
+.rc-num small{flex-basis:100%;font:500 .72rem var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.rc-grade{display:grid;place-items:center;width:86px;height:86px;border:4px solid var(--pen);border-radius:50%;color:var(--pen);font:900 3.2rem/1 var(--f-display);transform:rotate(-12deg);box-shadow:inset 0 0 0 3px var(--surface),inset 0 0 0 5px currentColor;animation:gradein .6s cubic-bezier(.2,1.5,.3,1) .9s backwards}
+.rc-grade.gA,.rc-grade.gB{color:var(--good);border-color:var(--good)}
+@keyframes gradein{from{transform:scale(3.2) rotate(-32deg);opacity:0}}
+.rc-note{margin:0;font:700 1.75rem/1.1 var(--f-hand);color:var(--pen);transform:rotate(-1deg);animation:write .9s ease-out 1.2s backwards}
+.modal{position:fixed;inset:0;z-index:80;display:grid;place-items:center;padding:16px;background:rgba(10,14,30,.58);animation:fadein .25s}
+.scard{background:var(--surface);color:var(--ink);border:2px solid var(--ink);box-shadow:9px 9px 0 var(--hi);max-width:480px;width:100%;padding:22px 24px 24px;display:grid;gap:16px;transform:rotate(-.7deg);animation:cardin .5s cubic-bezier(.2,1.3,.4,1) backwards}
+@keyframes cardin{from{transform:translateY(40px) rotate(4deg) scale(.9);opacity:0}}
+.scard h2{font:900 2.4rem/1 var(--f-display);text-transform:uppercase;letter-spacing:.01em}
+.sg-row{display:flex;gap:22px;align-items:center;flex-wrap:wrap}
+.sg-row .rc-grade{width:104px;height:104px;font-size:4rem;animation-delay:.35s;flex:none}
+.sg-stats{list-style:none;margin:0;padding:0;display:grid;gap:5px;font:500 .95rem/1.3 var(--f-mono)}
+.sg-stats b{font-weight:800}
+.sg-note{margin:0;font:700 1.55rem/1.25 var(--f-hand)}
+.swipe{background:linear-gradient(var(--hi),var(--hi)) no-repeat 0 86%/100% 52%;color:#151b33;padding:0 4px;-webkit-box-decoration-break:clone;box-decoration-break:clone;animation:swipe .8s ease-out .7s backwards}
+@keyframes swipe{from{background-size:0 52%}}
+.sg-leak{margin:0;color:var(--muted);font-size:.92rem}
+.navrow{display:flex;flex-wrap:wrap;gap:10px 22px;align-items:center;justify-content:space-between}
+.nav{position:relative}
+.nav a{position:relative;z-index:1}
+.nav-ink{position:absolute;z-index:0;background:var(--hi);pointer-events:none;transition:left .4s cubic-bezier(.3,1.35,.4,1),width .4s cubic-bezier(.3,1.35,.4,1),top .2s,height .2s}
+.wrap [data-page]:not([hidden]){animation:pageturn .6s cubic-bezier(.2,.7,.2,1) calc(var(--i,0)*90ms) backwards;transform-origin:0 50%}
+@keyframes pageturn{from{opacity:0;transform:perspective(1700px) rotateY(-14deg) translateX(-20px)}}
+@keyframes pop{from{transform:scale(0);opacity:0}}
+@keyframes barfill{from{transform:scaleX(0)}}
+.bar>i{transform-origin:left;animation:barfill .95s cubic-bezier(.2,.8,.2,1) var(--d,0s) backwards}
+.hb-m .bar i{border-radius:0 3px 3px 0}
+.star{display:inline-block;margin-left:7px;color:var(--s2);-webkit-text-stroke:.6px var(--ink);transform:rotate(-12deg);animation:starpop .55s cubic-bezier(.3,1.8,.5,1) calc(var(--d,0s) + .75s) backwards}
+@keyframes starpop{from{transform:scale(0) rotate(-140deg);opacity:0}}
+.delta{display:inline-block;margin-left:9px;font:700 1.15rem/1 var(--f-hand);transform:rotate(-3deg);animation:write .6s ease-out calc(var(--d,0s) + .95s) backwards}
+.delta.up{color:var(--good)}.delta.down{color:var(--pen)}
+.ln{stroke-dasharray:1;stroke-dashoffset:0}
+.chart-in .ln{animation:pdraw 1.05s cubic-bezier(.3,.6,.3,1) var(--d,0s) backwards}
+.chart-in .dot{animation:pop .45s cubic-bezier(.3,1.7,.5,1) calc(.5s + var(--d,0s)) backwards;transform-box:fill-box;transform-origin:center}
+.chart-in .dot.end{animation-delay:calc(.95s + var(--d,0s))}
+.chart-in line,.chart-in text{animation:fadein .5s backwards}
+.chart-in .endlbl{animation-delay:1s}
+.chart-morph text,.chart-morph line{animation:fadein .4s backwards}
+.chart-morph .endlbl{animation-delay:.35s}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
 </style>
 </head>
 <body>
@@ -253,7 +353,7 @@ table.t{border-collapse:collapse;font-size:.88rem;width:100%}
   <header class="mast">
     <h1>Blunder<span class="nag" aria-hidden="true">??</span><span class="lab"> Lab</span></h1>
     <div class="mast-side">
-      <nav class="nav" aria-label="Pages"><a href="#/train" data-go="train">Train</a><a href="#/progress" data-go="progress">Progress</a><a href="#/habits" data-go="habits">Habits</a><a href="#/games" data-go="games">Games</a></nav>
+      <div class="navrow"><nav class="nav" aria-label="Pages"><span class="nav-ink" id="navink" aria-hidden="true"></span><a href="#/train" data-go="train">Train</a><a href="#/progress" data-go="progress">Progress</a><a href="#/habits" data-go="habits">Habits</a><a href="#/games" data-go="games">Games</a></nav><button id="snd" class="small" type="button" aria-pressed="false">Sound off</button></div>
       <p class="intro">Your recent chess.com games, checked by Stockfish in your browser. The biggest swings become puzzles: find the move you missed.</p>
     </div>
   </header>
@@ -283,6 +383,11 @@ table.t{border-collapse:collapse;font-size:.88rem;width:100%}
         </div>
       </div>
     </div>
+    <div class="think" id="think" hidden aria-hidden="true">
+      <div class="tb" id="tb"><svg class="ov tov" id="tbov" viewBox="0 0 8 8"></svg></div>
+      <div class="evbar"><b id="evb"></b></div>
+      <div class="tstat"><div class="tw">Stockfish is thinking<span class="tdots"></span></div><div class="tev" id="tev">0.0</div><div class="tline" id="tline"></div><div class="mono muted small" id="tinfo"></div></div>
+    </div>
     <details>
       <summary>Fetch didn't work? Use a PGN file instead</summary>
       <div style="display:grid;gap:10px">
@@ -294,15 +399,25 @@ table.t{border-collapse:collapse;font-size:.88rem;width:100%}
     </details>
   </section>
 
+  <section class="panel report off" id="report" data-page="train" aria-labelledby="rc-h">
+    <div class="ph"><h2 id="rc-h">Report card</h2><span class="eyebrow" id="rc-sub"></span></div>
+    <div class="rc">
+      <div class="rc-num"><b id="rc-acc">0</b><span>%</span><small>average accuracy</small></div>
+      <div class="rc-grade gC" id="rc-grade" role="img" aria-label="Grade">C</div>
+      <p class="rc-note" id="rc-note"></p>
+    </div>
+  </section>
+
   <div class="main" id="puzzles" data-page="train">
     <div class="left">
     <section class="panel trainer" aria-labelledby="pz-h">
       <div class="ph"><h2 id="pz-h">Puzzle</h2><span class="eyebrow" id="pzCount">0 / 0 solved</span></div>
+      <div class="tally" id="tally"></div>
       <div class="prompt">
         <div class="who" id="who">Puzzles appear here as games finish.</div>
         <div id="ctx">Each game gives you its 1–2 worst moments. Your job is to find the move Stockfish wanted.</div>
       </div>
-      <div class="board" id="board" role="grid" aria-label="Chess board"></div>
+      <div class="bw" id="bw"><div class="board" id="board" role="grid" aria-label="Chess board"></div><svg class="ov" id="ov" viewBox="0 0 8 8" aria-hidden="true"></svg><div class="stamp" id="stamp" hidden aria-hidden="true"></div></div>
       <div class="feedback info" id="fb"></div>
       <div class="line" id="pv"></div>
       <div class="why" id="why" hidden></div>
@@ -310,6 +425,7 @@ table.t{border-collapse:collapse;font-size:.88rem;width:100%}
         <button id="hint" disabled>Hint</button>
         <button id="reveal" disabled>Show answer</button>
         <button id="retry" disabled>Reset</button>
+        <button id="replay" disabled>Replay</button>
         <button class="primary" id="next" disabled>Next puzzle</button>
       </div>
     </section>
@@ -542,6 +658,7 @@ const Engine={w:null,ready:null,queue:[],busy:false,cur:null,
   pump(){
     if(this.busy||!this.queue.length)return;
     const job=this.queue.shift();this.busy=true;this.cur=job;
+    if(this.onStart)this.onStart(job);
     this.w.postMessage("position fen "+job.fen);
     this.w.postMessage(`go depth 18 movetime ${job.ms}`);
   },
@@ -549,7 +666,7 @@ const Engine={w:null,ready:null,queue:[],busy:false,cur:null,
     const job=this.cur;if(!job)return;
     if(line.startsWith("info")&&line.includes(" pv ")&&!/multipv [2-9]/.test(line)){
       const m=line.match(/score (cp|mate) (-?\d+)/);const pv=line.split(" pv ")[1].trim().split(/\s+/);
-      if(m)job.info={type:m[1],v:parseInt(m[2],10),pv};
+      if(m){job.info={type:m[1],v:parseInt(m[2],10),pv};if(this.onInfo){const dm=line.match(/ depth (\d+)/);this.onInfo(job,{type:m[1],v:parseInt(m[2],10),pv,depth:dm?+dm[1]:0})}}
     }else if(line.startsWith("bestmove")){
       const best=line.split(/\s+/)[1];
       const info=job.info||{type:"cp",v:0,pv:[best]};
@@ -614,7 +731,8 @@ async function analyzeGame(g,color,ms,onProg){
     else if(i<20)tag="opening";
     else tag="quiet";
     mistakes.push({ply:i,fen:fens[i],moveNo:Math.floor(i/2)+1,played,playedSan:m.san,best:evB.best,bestSan:bm?bm.san:evB.best,
-      pv:pvSan(fens[i],evB.pv,6),pvUci:evB.pv.slice(0,6),before:Math.round(before),after:Math.round(after),drop:Math.round(drop),tag,refut:(evA.pv||[]).slice(0,4),mateB:relMate(evB,color),mateA:relMate(evA,color)});
+      pv:pvSan(fens[i],evB.pv,6),pvUci:evB.pv.slice(0,6),before:Math.round(before),after:Math.round(after),drop:Math.round(drop),tag,refut:(evA.pv||[]).slice(0,4),mateB:relMate(evB,color),mateA:relMate(evA,color),
+      lead:{fen:fens[Math.max(0,i-4)],moves:moves.slice(Math.max(0,i-4),i).map(x=>x.from+x.to+(x.promotion||""))}});
   });
   const userMoves=moves.filter((m,i)=>m.color===color&&i>=2).length;
   return {mistakes,userMoves,plies:moves.length,acc:accN?Math.round(accSum/accN*10)/10:null,accMoves:accN};
@@ -740,6 +858,17 @@ function computeHabits(g,color,mistakes){
   }catch(e){return null}
 }
 
+// Older saved games lack the lead-up moves used by the puzzle replay; rebuild them from the PGN.
+function addLeads(g,s){
+  const ch=new Chess(),fens=[ch.fen()],mv=[];
+  for(const x of g.sans){const m=ch.move(x,{sloppy:true});if(!m)break;mv.push(m);fens.push(ch.fen())}
+  let did=false;
+  for(const m of s.mistakes){
+    if(m.lead)continue;const i=m.ply,st=Math.max(0,i-4);if(i>mv.length)continue;
+    m.lead={fen:fens[st],moves:mv.slice(st,i).map(x=>x.from+x.to+(x.promotion||""))};did=true;
+  }
+  return did;
+}
 function resultFor(h,color){const r=h.Result;if(r==="1/2-1/2")return "D";if(r==="1-0")return color==="w"?"W":"L";if(r==="0-1")return color==="b"?"W":"L";return "D"}
 
 async function run(text,opts={}){
@@ -760,18 +889,25 @@ async function run(text,opts={}){
   const ms=parseInt($("depth").value,10);
   running=true;stopFlag=false;$("go").disabled=true;$("sample").disabled=true;$("stop").hidden=false;
   state.order=pick.map(kf);state.cur=-1;
-  for(const g of pick){const s=state.games[kf(g)];if(s&&s.mistakes&&s.habV!==HAB_V){s.hab=computeHabits(g,s.color,s.mistakes);s.habV=HAB_V;s.elo=eloOf(g,s.color);saveGame(s)}}
+  for(const g of pick){
+    const s=state.games[kf(g)];if(!s||!s.mistakes)continue;
+    let dirty=false;
+    if(s.habV!==HAB_V){s.hab=computeHabits(g,s.color,s.mistakes);s.habV=HAB_V;s.elo=eloOf(g,s.color);dirty=true}
+    if(s.mistakes.some(m=>!m.lead))dirty=addLeads(g,s)||dirty;
+    if(dirty)saveGame(s);
+  }
   const todo=pick.filter(g=>{const s=state.games[kf(g)];return !s||s.ms<ms||s.acc==null});
   renderAll();updateSaved();saveMeta();
   if(!todo.length){setMsg(`All ${pick.length} games were already analyzed and saved, so this was instant.`);$("bar").style.width="100%";finish();return}
   setMsg("Loading Stockfish…");
   try{await Engine.init()}catch(e){setMsg(e.message,true);finish();return}
+  Think.start();
   let k=0;
   for(const g of todo){
     const key=kf(g);
     k++;
     const color=(g.headers.White||"").toLowerCase()===lu?"w":"b";
-    const label=`Game ${k} of ${todo.length}`;
+    const label=`Game ${k} of ${todo.length}`;Think.label=label;
     const res=await analyzeGame(g,color,ms,p=>{setMsg(`${label} · vs ${color==="w"?g.headers.Black:g.headers.White}`);$("bar").style.width=Math.round(((k-1+p)/todo.length)*100)+"%"});
     if(!res)break;
     state.games[key]={key,ms,color,white:g.headers.White,black:g.headers.Black,result:resultFor(g.headers,color),
@@ -783,7 +919,7 @@ async function run(text,opts={}){
   $("bar").style.width="100%";
   finish();
 }
-function finish(){running=false;$("go").disabled=false;$("sample").disabled=false;$("stop").hidden=true}
+function finish(){Think.stop();renderReport(true);running=false;$("go").disabled=false;$("sample").disabled=false;$("stop").hidden=true}
 function setMsg(t,err){const m=$("msg");m.textContent=t;m.className=err?"err":"muted"}
 
 /* ---------- issues + puzzles ---------- */
@@ -810,7 +946,7 @@ function renderAll(){
     const i=prevId?state.puzzles.findIndex(p=>p.id===prevId):-1;
     if(i>=0)state.cur=i;else{const f=state.puzzles.findIndex(p=>!state.solved[p.id]);openPuzzle(f>=0?f:0)}
   }else clearTrainer();
-  $("pzCount").textContent=`${Object.keys(state.solved).filter(id=>state.puzzles.some(p=>p.id===id)).length} / ${state.puzzles.length} solved`;
+  updateCount();
 }
 function renderIssues(issues){
   const box=$("issues");box.textContent="";
@@ -819,7 +955,7 @@ function renderIssues(issues){
   issues.forEach((x,i)=>{
     const d=document.createElement("div");d.className="issue";
     const T=TAGS[x.t];
-    d.innerHTML=`<strong>${T.label}</strong><span class="mono muted">${x.n}× · −${Math.round(x.loss)}%</span><div class="bar"><i style="width:${Math.max(6,x.loss/max*100)}%"></i></div>${i<3?`<p>${T.tip}</p>`:""}`;
+    d.innerHTML=`<strong>${T.label}</strong><span class="mono muted">${x.n}× · −${Math.round(x.loss)}%</span><div class="bar"><i style="width:${Math.max(6,x.loss/max*100)}%;--d:${(i*.08).toFixed(2)}s"></i></div>${i<3?`<p>${T.tip}</p>`:""}`;
     box.appendChild(d);
   });
 }
@@ -925,33 +1061,123 @@ function showWhy(p){
   mk("strong",null,"Why this is better",box);
   paras.forEach((t,i)=>mk("p",i===2?"fine":null,t,box));
   box.hidden=false;
+  if(motion())typeWhy(box);
+}
+
+/* ---------- motion + sound ---------- */
+const RMQ=window.matchMedia?matchMedia("(prefers-reduced-motion: reduce)"):{matches:false};
+const motion=()=>!RMQ.matches;
+const Snd={on:false,ctx:null,
+  c(){if(!this.on)return null;try{if(!this.ctx)this.ctx=new(window.AudioContext||window.webkitAudioContext)();if(this.ctx.state==="suspended")this.ctx.resume();return this.ctx}catch(e){return null}},
+  noise(c,dur,filt,freq,q,vol,when){const n=Math.max(1,Math.floor(c.sampleRate*dur)),b=c.createBuffer(1,n,c.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*(1-i/n);const s=c.createBufferSource(),f=c.createBiquadFilter(),g=c.createGain();s.buffer=b;f.type=filt;f.frequency.value=freq;f.Q.value=q;g.gain.value=vol;s.connect(f);f.connect(g);g.connect(c.destination);s.start(c.currentTime+(when||0))},
+  tone(c,f0,f1,dur,vol,type,when){const o=c.createOscillator(),g=c.createGain(),t=c.currentTime+(when||0);o.type=type||"sine";o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(f1,t+dur);g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0001,t+dur);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+dur+.02)},
+  click(){const c=this.c();if(!c)return;this.noise(c,.05,"bandpass",1700,1.1,.5);this.tone(c,190,95,.08,.18)},
+  pen(){const c=this.c();if(!c)return;this.noise(c,.28,"bandpass",3300,.9,.18);this.noise(c,.2,"highpass",5200,.7,.07,.12)},
+  thud(){const c=this.c();if(!c)return;this.tone(c,130,42,.24,.5);this.noise(c,.09,"lowpass",500,.8,.35)},
+  bad(){const c=this.c();if(!c)return;this.tone(c,150,110,.1,.18,"square");this.tone(c,130,90,.12,.18,"square",.11)}
+};
+// A hand-drawn circled move mark (??, ?, ?!, !) whose strokes draw themselves in.
+const PEN_G={"?":["M0 9 C0 -3 15 -3 15 9 C15 17 7.5 16 7.5 24","M7.5 30 L7.5 31"],"!":["M7 0 L7 21","M7 28 L7 29"]};
+const PEN_X={"??":[21,43],"?":[32.5],"?!":[23.5,41],"!":[33]};
+function penMark(sym){
+  const svg=sv("svg",{viewBox:"0 0 80 44",class:"mk-svg","aria-hidden":"true"});
+  const ring=sv("path",{d:"M8 24 C5 9 30 3 44 4 C64 5 77 13 74 24 C71 36 50 41 36 40 C17 39 6 33 7 20 C7 16 9 12 14 9",pathLength:1,class:"pd"},svg);
+  ring.style.setProperty("--t",".55s");
+  let t=.5;
+  [...sym].forEach((ch,i)=>{
+    const x=(PEN_X[sym]||[33])[i],g=sv("g",{transform:`translate(${x} 8)`},svg);
+    (PEN_G[ch]||[]).forEach(d=>{const p=sv("path",{d,pathLength:1,class:"pd"},g);p.style.setProperty("--d",t+"s");p.style.setProperty("--t",".26s");t+=.2});
+  });
+  return svg;
+}
+// Ink overlay drawn over the board: arrows and the pulsing ring.
+const Ov={
+  svg(){return $("ov")},
+  xy(sq,o=orient){const f=sq.charCodeAt(0)-97,r=+sq[1];return o==="w"?[f+.5,8-r+.5]:[7.5-f,r-.5]},
+  clear(){this.svg().textContent=""},
+  clearRing(){this.svg().querySelectorAll(".ring").forEach(e=>e.remove())},
+  ring(sq){const [x,y]=this.xy(sq);sv("circle",{cx:x,cy:y,r:.47,class:"ring"},this.svg())},
+  arrow(from,to,cls,delay,host,o){
+    host=host||this.svg();
+    const [x1,y1]=this.xy(from,o),[x2,y2]=this.xy(to,o),dx=x2-x1,dy=y2-y1,len=Math.hypot(dx,dy)||1,ux=dx/len,uy=dy/len;
+    const sx=x1+ux*.28,sy=y1+uy*.28,ex=x2-ux*.2,ey=y2-uy*.2;
+    const bend=((from.charCodeAt(0)+to.charCodeAt(1))%2?1:-1)*.1*Math.min(len,3);
+    const cx=(sx+ex)/2-uy*bend,cy=(sy+ey)/2+ux*bend,ang=Math.atan2(ey-cy,ex-cx),hl=.36;
+    const wing=a=>`${(ex-Math.cos(ang+a)*hl).toFixed(3)} ${(ey-Math.sin(ang+a)*hl).toFixed(3)}`;
+    const g=sv("g",{class:cls},host);
+    const s=sv("path",{d:`M${sx.toFixed(3)} ${sy.toFixed(3)} Q${cx.toFixed(3)} ${cy.toFixed(3)} ${ex.toFixed(3)} ${ey.toFixed(3)}`,pathLength:1,class:"shaft"},g);
+    const h=sv("path",{d:`M${wing(.5)} L${ex.toFixed(3)} ${ey.toFixed(3)} L${wing(-.5)}`,pathLength:1,class:"head"},g);
+    s.style.setProperty("--d",delay+"s");h.style.setProperty("--d",delay+"s");
+  }
+};
+// The "Why this is better" note writes itself out.
+let whyTok=0;
+function typeWhy(box){
+  const tok=++whyTok,ps=[...box.querySelectorAll("p")],texts=ps.map(p=>p.textContent);
+  box.style.minHeight=box.offsetHeight+"px";box.setAttribute("aria-busy","true");ps.forEach(p=>{p.textContent=""});
+  let i=0,j=0,last=performance.now(),acc=0;
+  const done=()=>{box.style.minHeight="";box.removeAttribute("aria-busy")};
+  const tick=t=>{
+    if(tok!==whyTok){done();return}
+    acc+=(t-last)*.16;last=t;let n=Math.floor(acc);acc-=n;
+    while(n-->0&&i<ps.length){j++;ps[i].textContent=texts[i].slice(0,j);if(j>=texts[i].length){i++;j=0}}
+    if(i<ps.length)requestAnimationFrame(tick);else done();
+  };
+  requestAnimationFrame(tick);
+}
+// Hand-drawn tally: one stroke per solved puzzle, four and a slash per group of five.
+function renderTally(done,total,fresh){
+  const host=$("tally");host.textContent="";if(!total)return;
+  const cap=Math.min(total,50),groups=Math.ceil(cap/5),W=groups*40+4;
+  const svg=sv("svg",{viewBox:`0 0 ${W} 34`,width:W,height:34,role:"img","aria-label":`${done} of ${total} puzzles solved`},host);
+  for(let i=0;i<cap;i++){
+    const g=Math.floor(i/5),k=i%5,x=g*40+4+k*8;
+    const d=k<4?`M${x} ${6+(i*7)%3} L${x+(i*5)%3-1} ${28-(i*3)%3}`:`M${g*40-1} 25 L${g*40+35} 8`;
+    sv("path",{d,pathLength:1,class:"tl "+(i<done?"on":"off")+(fresh&&i===done-1?" fresh":"")},svg);
+  }
+}
+function updateCount(fresh){
+  const done=Object.keys(state.solved).filter(id=>state.puzzles.some(q=>q.id===id)).length;
+  $("pzCount").textContent=`${done} / ${state.puzzles.length} solved`;
+  renderTally(done,state.puzzles.length,!!fresh);
+}
+const sess={tries:{},streak:0,best:0,solvedFirst:0,solvedAll:0};
+function shake(){const bw=$("bw");bw.classList.remove("shake");if(!motion())return;void bw.offsetWidth;bw.classList.add("shake")}
+function stampIt(){
+  const s=$("stamp");s.replaceChildren(penMark("!"));s.hidden=false;
+  if(motion())setTimeout(()=>{const bw=$("bw");bw.classList.remove("thud");void bw.offsetWidth;bw.classList.add("thud");Snd.thud()},300);
 }
 
 /* ---------- trainer ---------- */
-let pzGame=null,sel=null,hintSq=null,lastMv=null,orient="w",locked=false,solvedNow=false;
+let pzGame=null,sel=null,hintSq=null,lastMv=null,orient="w",locked=false,solvedNow=false,anim=null,leading=false,replayTok=0,revealTok=0;
 function clearTrainer(){
+  replayTok++;revealTok++;whyTok++;leading=false;anim=null;Ov.clear();$("stamp").hidden=true;$("replay").disabled=true;
   pzGame=null;state.cur=-1;
   $("who").textContent="Puzzles appear here as games finish.";
   $("ctx").textContent="Each game gives you its 1–2 worst moments. Your job is to find the move Stockfish wanted.";
   $("fb").className="feedback info";$("fb").textContent="";$("pv").textContent="";$("why").hidden=true;
   ["hint","reveal","retry","next"].forEach(id=>{$(id).disabled=true});
-  showGameHabits(null);drawBoard();
+  showGameHabits(null);drawBoard();updateCount();
 }
-function openPuzzle(i){
+function openPuzzle(i,o={}){
   const p=state.puzzles[i];if(!p)return;
-  state.cur=i;pzGame=new Chess(p.fen);sel=null;hintSq=null;locked=false;solvedNow=false;orient=p.color;
+  replayTok++;revealTok++;whyTok++;leading=false;
+  state.cur=i;pzGame=new Chess(p.fen);sel=null;hintSq=null;locked=false;solvedNow=false;orient=p.color;anim=null;
+  Ov.clear();$("stamp").hidden=true;
   const g=state.games[p.game];const opp=g.color==="w"?g.black:g.white;
   $("who").textContent=`${p.color==="w"?"White":"Black"} to move. Find the best move.`;
   const nag=nagOf(p.drop);
-  $("ctx").innerHTML=`<span>Move ${p.moveNo} vs ${esc(opp)}</span> <span class="pen" title="${nag.t}">${nag.s}</span> <span class="chip">${TAGS[p.tag].label} <b>\u2212${p.drop}%</b></span>`;
-  // show previous opponent move as highlight
+  $("ctx").innerHTML=`<span>Move ${p.moveNo} vs ${esc(opp)}</span> <span class="penwrap" title="${nag.t}"></span> <span class="chip">${TAGS[p.tag].label} <b>−${p.drop}%</b></span>`;
+  $("ctx").querySelector(".penwrap").appendChild(penMark(nag.s));
+  if(motion())Snd.pen();
   lastMv=null;
   const fb=$("fb");fb.className="feedback info";fb.textContent=`Win chance ${p.before}% here. Your game move dropped it to ${p.after}%.`;
   $("pv").textContent="";$("why").hidden=true;
   ["hint","reveal","retry"].forEach(id=>$(id).disabled=false);
+  $("replay").disabled=!(p.lead&&p.lead.moves.length);
   $("next").disabled=state.puzzles.length<2;
-  drawBoard();renderGames();showGameHabits(p);
-  $("pzCount").textContent=`${Object.keys(state.solved).filter(id=>state.puzzles.some(q=>q.id===id)).length} / ${state.puzzles.length} solved`;
+  drawBoard();renderGames();showGameHabits(p);updateCount();
+  if(o.replay!==false)playLead(p);
 }
 function drawBoard(){
   const b=$("board");b.textContent="";
@@ -967,6 +1193,7 @@ function drawBoard(){
     if(pc){const s=document.createElement("span");s.className=pc.color==="w"?"pw":"pb";s.textContent=GLYPH[pc.type]+"︎";btn.appendChild(s)}
     if(lastMv&&(sq===lastMv.from||sq===lastMv.to))btn.classList.add("last");
     if(sq===sel)btn.classList.add("sel");
+    if(pc&&pzGame&&!locked&&!solvedNow&&!leading&&pc.color===pzGame.turn())btn.classList.add("mine");
     if(sq===hintSq)btn.classList.add("hint");
     if(targets.has(sq))btn.classList.add("tgt");
     if(f===7){const c=document.createElement("span");c.className="coord r";c.textContent=rank;btn.appendChild(c)}
@@ -974,9 +1201,44 @@ function drawBoard(){
     btn.onclick=()=>tap(sq);
     b.appendChild(btn);
   }
+  if(anim){
+    const a=anim;anim=null;
+    if(motion()){
+      const src=b.querySelector(`[data-sq="${a.from}"]`),dst=b.querySelector(`[data-sq="${a.to}"]`),sp=dst&&dst.querySelector(".pw,.pb");
+      if(src&&dst&&sp&&sp.animate){
+        const rs=src.getBoundingClientRect(),rd=dst.getBoundingClientRect();dst.classList.add("anim");
+        const an=sp.animate([{transform:`translate(${rs.left-rd.left}px,${rs.top-rd.top}px)`},{transform:"translate(0,0)"}],{duration:240,easing:"cubic-bezier(.2,.8,.2,1)"});
+        an.onfinish=()=>{dst.classList.remove("anim");sp.animate([{transform:"scale(1)"},{transform:"scale(1.15,.88)",offset:.35},{transform:"scale(.97,1.04)",offset:.7},{transform:"scale(1)"}],{duration:280})};
+      }
+    }
+  }
+}
+function skipLead(){const p=state.puzzles[state.cur];if(p)endLead(p)}
+function playLead(p){
+  const lead=p.lead;if(!lead||!lead.moves.length||!motion())return;
+  const tok=++replayTok;leading=true;locked=true;pzGame=new Chess(lead.fen);lastMv=null;sel=null;
+  const fb=$("fb");fb.className="feedback info";fb.textContent="Watch how this position came about. Tap the board to skip.";
+  drawBoard();
+  let k=0;
+  const step=()=>{
+    if(tok!==replayTok)return;
+    if(k>=lead.moves.length){setTimeout(()=>{if(tok===replayTok)endLead(p)},600);return}
+    const m=uciMove(pzGame,lead.moves[k++]);
+    if(m){lastMv={from:m.from,to:m.to};anim={from:m.from,to:m.to};drawBoard();Snd.click()}
+    setTimeout(step,720);
+  };
+  setTimeout(step,450);
+}
+function endLead(p){
+  replayTok++;leading=false;locked=false;
+  const lm=lastMv;pzGame=new Chess(p.fen);lastMv=lm;sel=null;
+  const fb=$("fb");fb.className="feedback info";fb.textContent="The circled piece is the one you moved in the game. Find something better.";
+  drawBoard();Ov.clear();Ov.ring(p.played.slice(0,2));
 }
 function tap(sq){
+  if(leading){skipLead();return}
   if(!pzGame||locked||solvedNow)return;
+  Ov.clearRing();
   const p=state.puzzles[state.cur];
   const pc=pzGame.get(sq);
   if(sel){
@@ -986,9 +1248,37 @@ function tap(sq){
   }
   sel=pc&&pc.color===pzGame.turn()?sq:null;drawBoard();
 }
+// Drag a piece with the pointer: it lifts, follows the cursor, and drops onto a square like a tap.
+let drag=null,ghost=null;
+$("board").addEventListener("pointerdown",e=>{
+  if(e.button>0||leading||!pzGame||locked||solvedNow)return;
+  const btn=e.target.closest&&e.target.closest(".sq");if(!btn)return;
+  const pc=pzGame.get(btn.dataset.sq);if(!pc||pc.color!==pzGame.turn())return;
+  drag={sq:btn.dataset.sq,x:e.clientX,y:e.clientY,on:false,id:e.pointerId};
+});
+window.addEventListener("pointermove",e=>{
+  if(!drag||e.pointerId!==drag.id)return;
+  if(!drag.on){
+    if(Math.hypot(e.clientX-drag.x,e.clientY-drag.y)<6)return;
+    drag.on=true;Ov.clearRing();sel=drag.sq;drawBoard();
+    const btn=$("board").querySelector(`[data-sq="${drag.sq}"]`),sp=btn&&btn.querySelector(".pw,.pb");
+    if(btn)btn.classList.add("drag");
+    if(sp){ghost=document.createElement("span");ghost.className="ghostpc "+sp.className;ghost.textContent=sp.textContent;ghost.style.fontSize=getComputedStyle(sp).fontSize;document.body.appendChild(ghost)}
+  }
+  if(ghost){ghost.style.left=e.clientX+"px";ghost.style.top=e.clientY+"px"}
+});
+function endDrag(e){
+  if(!drag||e.pointerId!==drag.id)return;
+  const d=drag;drag=null;if(ghost){ghost.remove();ghost=null}
+  if(!d.on)return;
+  const el=document.elementFromPoint(e.clientX,e.clientY),t=el&&el.closest&&el.closest(".sq"),to=t&&t.dataset.sq;
+  if(to&&to!==d.sq)tap(to);else{sel=null;drawBoard()}
+}
+window.addEventListener("pointerup",endDrag);
+window.addEventListener("pointercancel",endDrag);
 async function attempt(from,to,p){
   const m=pzGame.move({from,to,promotion:"q"});sel=null;if(!m){drawBoard();return}
-  lastMv={from,to};drawBoard();
+  lastMv={from,to};anim={from,to};Snd.click();drawBoard();
   const uci=from+to+(m.promotion||"");
   const fb=$("fb");
   if(uci===p.best||uci.slice(0,4)===p.best.slice(0,4)||pzGame.in_checkmate()){solved(p,true);return}
@@ -999,33 +1289,48 @@ async function attempt(from,to,p){
     const ev=toWhite(await Engine.eval(pzGame.fen(),500,true),pzGame.turn());
     const w=userWp(ev,p.color);ok=p.before-w<=4;dropTxt=Math.round(p.before-w);
   }catch(e){ok=false;dropTxt=""}
+  if(state.puzzles[state.cur]!==p)return;
   if(ok){locked=false;solved(p,false);return}
+  sess.tries[p.id]=(sess.tries[p.id]||0)+1;sess.streak=0;shake();Snd.bad();
   fb.className="feedback no";fb.textContent=`${m.san} isn't it${dropTxt!==""&&dropTxt>0?`; it costs about ${dropTxt}%`:""}. Try again.`;
-  setTimeout(()=>{pzGame.undo();lastMv=null;locked=false;drawBoard()},900);
+  setTimeout(()=>{if(state.puzzles[state.cur]!==p)return;pzGame.undo();lastMv=null;locked=false;drawBoard()},900);
 }
 function solved(p,exact){
-  solvedNow=true;state.solved[p.id]=1;saveSolved(p.id);updateSaved();
+  solvedNow=true;const wasNew=!state.solved[p.id];state.solved[p.id]=1;saveSolved(p.id);updateSaved();
+  if(wasNew){const first=!sess.tries[p.id];sess.solvedAll++;if(first){sess.solvedFirst++;sess.streak++;sess.best=Math.max(sess.best,sess.streak)}else sess.streak=0}
   const fb=$("fb");fb.className="feedback ok";
   fb.textContent=exact?`Correct: ${p.bestSan}.`:`Good move. Stockfish's top choice was ${p.bestSan}, but yours holds the position too.`;
-  showLine(p,exact);renderGames();
-  $("pzCount").textContent=`${Object.keys(state.solved).filter(id=>state.puzzles.some(q=>q.id===id)).length} / ${state.puzzles.length} solved`;
+  showLine(p,exact);renderGames();updateCount(wasNew);stampIt();
   $("hint").disabled=true;$("reveal").disabled=true;
+  checkSession();
 }
 function showLine(p,playReply){
   showWhy(p);
   const pv=$("pv");pv.textContent="";mk("span",null,`In the game you played ${p.playedSan}. Best line: `,pv);mk("span","hl",numbered(p),pv);
-  if(playReply&&p.pvUci[1]){setTimeout(()=>{if(state.puzzles[state.cur]!==p)return;const m=uciMove(pzGame,p.pvUci[1]);if(m){lastMv={from:m.from,to:m.to};drawBoard()}},650)}
+  Ov.clear();Ov.arrow(p.best.slice(0,2),p.best.slice(2,4),"good",0);Snd.pen();
+  if(playReply&&p.pvUci[1]){setTimeout(()=>{if(state.puzzles[state.cur]!==p)return;const m=uciMove(pzGame,p.pvUci[1]);if(m){lastMv={from:m.from,to:m.to};anim={from:m.from,to:m.to};drawBoard();Snd.click();Ov.arrow(m.from,m.to,"bad",0)}},650)}
 }
 function numbered(p){
   let n=p.moveNo,white=p.color==="w",out=[];
   p.pv.forEach((s,i)=>{if(white){out.push(n+". "+s)}else{out.push(i===0?n+"… "+s:s);n++}white=!white});
   return out.join(" ");
 }
-$("hint").onclick=()=>{const p=state.puzzles[state.cur];if(!p)return;hintSq=p.best.slice(0,2);drawBoard();const f=$("fb");f.className="feedback info";f.textContent="The highlighted piece is the one to move."};
-$("reveal").onclick=()=>{const p=state.puzzles[state.cur];if(!p||solvedNow)return;
-  pzGame=new Chess(p.fen);const m=uciMove(pzGame,p.best);lastMv=m?{from:m.from,to:m.to}:null;hintSq=null;solvedNow=true;drawBoard();
-  const f=$("fb");f.className="feedback info";f.textContent=`Answer: ${p.bestSan}. Try this one again later.`;showLine(p,false);$("hint").disabled=true;$("reveal").disabled=true};
-$("retry").onclick=()=>openPuzzle(state.cur);
+$("hint").onclick=()=>{const p=state.puzzles[state.cur];if(!p||leading)return;sess.tries[p.id]=(sess.tries[p.id]||0)+1;hintSq=p.best.slice(0,2);drawBoard();const f=$("fb");f.className="feedback info";f.textContent="The highlighted piece is the one to move."};
+$("reveal").onclick=()=>{
+  const p=state.puzzles[state.cur];if(!p||solvedNow)return;
+  const tok=++revealTok;replayTok++;leading=false;locked=false;sess.tries[p.id]=(sess.tries[p.id]||0)+1;
+  hintSq=null;sel=null;solvedNow=true;pzGame=new Chess(p.fen);lastMv=null;Ov.clear();drawBoard();
+  const f=$("fb");f.className="feedback info";
+  const hasRef=p.refut&&p.refut[0];
+  f.textContent=`Answer: ${p.bestSan}${hasRef?`. Green is the best move; red is how your opponent punished ${p.playedSan} in the game`:""}. Try this one again later.`;
+  showLine(p,false);
+  if(hasRef)Ov.arrow(p.refut[0].slice(0,2),p.refut[0].slice(2,4),"bad",.75);
+  $("hint").disabled=true;$("reveal").disabled=true;
+  const apply=()=>{if(tok!==revealTok||state.puzzles[state.cur]!==p)return;pzGame=new Chess(p.fen);const mm=uciMove(pzGame,p.best);lastMv=mm?{from:mm.from,to:mm.to}:null;anim=lastMv?{...lastMv}:null;drawBoard();Snd.click()};
+  if(motion())setTimeout(apply,1500);else apply();
+};
+$("retry").onclick=()=>openPuzzle(state.cur,{replay:false});
+$("replay").onclick=()=>openPuzzle(state.cur);
 $("next").onclick=()=>{const n=state.puzzles.length;if(!n)return;
   for(let k=1;k<=n;k++){const i=(state.cur+k)%n;if(!state.solved[state.puzzles[i].id]){openPuzzle(i);return}}
   openPuzzle((state.cur+1)%n)};
@@ -1121,7 +1426,7 @@ function asOf(track,t){for(let i=track.length-1;i>=0;i--)if(track[i].t<=t)return
 function drawChart(host,spec){
   host.textContent="";
   const vis=spec.series;
-  if(!vis.length){mk("div","empty",spec.empty,host);return}
+  if(!vis.length){host._prev=null;mk("div","empty",spec.empty,host);return}
   const W=Math.max(280,Math.floor(host.clientWidth||600)),Ht=W<520?250:290,labels=W>=480;
   const m={t:12,r:labels?92:16,b:28,l:46},pw=W-m.l-m.r,ph=Ht-m.t-m.b;
   let t0=Infinity,t1=-Infinity,lo=Infinity,hi=-Infinity;
@@ -1133,7 +1438,11 @@ function drawChart(host,spec){
   if(spec.max!=null&&yHi>spec.max){yHi=spec.max;ticks=ticks.filter(v=>v<=yHi);if(ticks[ticks.length-1]<yHi)ticks.push(yHi)}
   if(spec.min!=null&&yLo<spec.min){yLo=spec.min;ticks=ticks.filter(v=>v>=yLo);if(ticks[0]>yLo)ticks.unshift(yLo)}
   const X=t=>m.l+8+(t-t0)/(t1-t0)*(pw-16),Y=v=>m.t+(1-(v-yLo)/(yHi-yLo))*ph;
+  const sig=vis.map(s=>s.id+":"+s.track.length+":"+s.hit.length).join("|"),prev=host._prev,modeKey=spec.mode||"";
+  const animIn=motion()&&(!prev||prev.sig!==sig),morphing=motion()&&!!prev&&prev.sig===sig&&prev.mode!==modeKey&&prev.W===W;
+  const pts={},refs=[];
   const svg=sv("svg",{width:W,height:Ht,viewBox:`0 0 ${W} ${Ht}`,role:"group",tabindex:"0","aria-label":spec.aria+" Use the left and right arrow keys to move between points."},host);
+  if(animIn)svg.classList.add("chart-in");if(morphing)svg.classList.add("chart-morph");
   ticks.forEach(v=>{
     sv("line",{x1:m.l,x2:W-m.r,y1:Y(v),y2:Y(v),style:"stroke:var(--grid);stroke-width:1"},svg);
     sv("text",{x:m.l-8,y:Y(v)+4,"text-anchor":"end",style:"fill:var(--muted);font-size:11px;font-family:var(--f-mono)"},svg).textContent=spec.fmtY(v);
@@ -1142,12 +1451,15 @@ function drawChart(host,spec){
   sv("line",{x1:m.l,x2:W-m.r,y1:m.t+ph,y2:m.t+ph,style:"stroke:var(--axis);stroke-width:1"},svg);
   xTicks(t0,t1).forEach(k=>sv("text",{x:X(k.t),y:Ht-8,"text-anchor":"middle",style:"fill:var(--muted);font-size:11px"},svg).textContent=k.label);
   const hits=[];
-  vis.forEach(s=>{
-    const g=sv("g",{},svg);
-    if(s.dots)s.hit.forEach(p=>sv("circle",{cx:X(p.t),cy:Y(p.v),r:4,style:`fill:${s.color};opacity:.5`},g));
-    if(s.track.length>1)sv("polyline",{points:s.track.map(p=>X(p.t).toFixed(1)+","+Y(p.v).toFixed(1)).join(" "),style:`fill:none;stroke:${s.color};stroke-width:2;stroke-linejoin:round;stroke-linecap:round`},g);
+  vis.forEach((s,si)=>{
+    const g=sv("g",{},svg);g.style.setProperty("--d",(si*.12).toFixed(2)+"s");
+    if(s.dots)s.hit.forEach(p=>sv("circle",{cx:X(p.t),cy:Y(p.v),r:4,class:"dot",style:`fill:${s.color};opacity:.5`},g));
+    const now=s.track.map(p=>[X(p.t),Y(p.v)]);pts[s.id]=now;
+    const poly=s.track.length>1?sv("polyline",{points:now.map(q=>q[0].toFixed(1)+","+q[1].toFixed(1)).join(" "),pathLength:1,class:"ln",style:`fill:none;stroke:${s.color};stroke-width:2;stroke-linejoin:round;stroke-linecap:round`},g):null;
     const last=s.track[s.track.length-1];
-    if(last)sv("circle",{cx:X(last.t),cy:Y(last.v),r:4.5,style:`fill:${s.color};stroke:var(--surface);stroke-width:2`},g);
+    const endC=last?sv("circle",{cx:X(last.t),cy:Y(last.v),r:4.5,class:"dot end",style:`fill:${s.color};stroke:var(--surface);stroke-width:2`},g):null;
+    const from=prev&&prev.pts&&prev.pts[s.id];
+    if(morphing&&poly&&from&&from.length===now.length)refs.push({line:poly,end:endC,from,to:now});
     s.hit.forEach(p=>hits.push({s,p,x:X(p.t),y:Y(p.v)}));
   });
   hits.sort((a,b)=>a.x-b.x||a.y-b.y);
@@ -1156,7 +1468,7 @@ function drawChart(host,spec){
     vis.forEach(s=>{
       const last=s.track[s.track.length-1];if(!last)return;
       const y=Y(last.v);if(placed.some(py=>Math.abs(py-y)<15))return;placed.push(y);
-      sv("text",{x:X(last.t)+10,y:y+4,style:"fill:var(--ink);font-size:12px;font-weight:600;paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round"},svg).textContent=s.label+" "+spec.fmtEnd(last);
+      sv("text",{x:X(last.t)+10,y:y+4,class:"endlbl",style:"fill:var(--ink);font-size:12px;font-weight:600;paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round"},svg).textContent=s.label+" "+spec.fmtEnd(last);
     });
   }
   const cross=sv("line",{y1:m.t,y2:m.t+ph,style:"stroke:var(--axis);stroke-width:1",visibility:"hidden"},svg);
@@ -1188,6 +1500,20 @@ function drawChart(host,spec){
     let best=-1,bd=Infinity;
     for(let i=0;i<hits.length;i++){const dx=hits[i].x-mx,dy=(hits[i].y-my)*0.4,d=dx*dx+dy*dy;if(d<bd){bd=d;best=i}}
     return best;
+  }
+  host._prev={sig,mode:modeKey,W,pts};
+  if(morphing&&refs.length){
+    const tok=host._tw=(host._tw||0)+1,t0=performance.now();
+    const step=now=>{
+      if(host._tw!==tok)return;
+      const k=Math.min(1,(now-t0)/560),e=1-Math.pow(1-k,3);
+      refs.forEach(r=>{
+        r.line.setAttribute("points",r.to.map((q,i)=>(r.from[i][0]+(q[0]-r.from[i][0])*e).toFixed(1)+","+(r.from[i][1]+(q[1]-r.from[i][1])*e).toFixed(1)).join(" "));
+        if(r.end){const l=r.to.length-1;r.end.setAttribute("cy",r.from[l][1]+(r.to[l][1]-r.from[l][1])*e)}
+      });
+      if(k<1)requestAnimationFrame(step);
+    };
+    step(t0);
   }
   svg.addEventListener("pointermove",e=>show(nearest(e)));
   svg.addEventListener("pointerdown",e=>show(nearest(e)));
@@ -1240,13 +1566,13 @@ function renderCharts(){
     if(ap&&ap.length)as.push({id:c,label,color:CLS_COLOR[c],track:rolling(ap,5),hit:ap,dots:true});
   });
   const hiddenMsg="Every time control is turned off. Turn one on above.";
-  drawChart($("rhost"),{series:rs,empty:anyR?hiddenMsg:"No rating history yet. Tap “Load rating history” above, or fetch your games.",
+  drawChart($("rhost"),{mode:prog.mode,series:rs,empty:anyR?hiddenMsg:"No rating history yet. Tap “Load rating history” above, or fetch your games.",
     aria:change?"Line chart of rating change by time control.":"Line chart of rating by time control.",
     fmtY:change?sgn:(v=>String(v)),zero:change,
     fmtEnd:p=>change?sgn(p.v):String(p.v),
     fmtPoint:p=>change?`${sgn(p.v)} (${p.raw})`:String(p.v),
     note:()=>"before the game",fmtTrack:p=>change?`${sgn(p.v)} (${p.raw})`:String(p.v),trackNote:"latest"});
-  drawChart($("ahost"),{series:as,empty:anyA?hiddenMsg:"Accuracy appears here once games are analyzed. Fetch and analyze your games above.",
+  drawChart($("ahost"),{mode:"acc",series:as,empty:anyA?hiddenMsg:"Accuracy appears here once games are analyzed. Fetch and analyze your games above.",
     aria:"Chart of accuracy per analyzed game with a 5-game average.",
     fmtY:v=>Math.round(v)+"%",max:100,min:0,fmtEnd:p=>Math.round(p.v)+"%",
     fmtPoint:p=>p.v.toFixed(1)+"%",note:p=>`vs ${p.opp} · ${p.res==="W"?"won":p.res==="L"?"lost":"draw"}`,
@@ -1294,10 +1620,10 @@ function renderProgress(){
   if(prog.table)renderTables();else renderCharts();
   $("coverage").textContent=prog.note||coverageText();
 }
-const savePrefs=()=>dbPut("meta",{k:"prefs",range:prog.range,mode:prog.mode,hidden:prog.hidden,hband:prog.hband});
+const savePrefs=()=>dbPut("meta",{k:"prefs",range:prog.range,mode:prog.mode,hidden:prog.hidden,hband:prog.hband,snd:Snd.on});
 async function loadPrefs(){
   const p=await dbGet("meta","prefs");
-  if(p){prog.range=p.range||3;prog.mode=p.mode||"rating";prog.hidden=p.hidden||{};prog.hband=p.hband||"auto";$("hband").value=prog.hband;$("range").value=String(prog.range)}
+  if(p){prog.range=p.range||3;prog.mode=p.mode||"rating";prog.hidden=p.hidden||{};prog.hband=p.hband||"auto";$("hband").value=prog.hband;Snd.on=!!p.snd;syncSnd();$("range").value=String(prog.range)}
 }
 $("range").onchange=()=>{prog.range=parseInt($("range").value,10);prog.note="";savePrefs();refreshRatings()};
 $("mrating").onclick=()=>{prog.mode="rating";savePrefs();renderProgress()};
@@ -1307,8 +1633,102 @@ $("loadhist").onclick=loadHistory;
 $("user").addEventListener("change",()=>{prog.note="";refreshRatings()});
 if(window.ResizeObserver){
   let rz=0;
-  const ro=new ResizeObserver(()=>{cancelAnimationFrame(rz);rz=requestAnimationFrame(()=>{if(!prog.table&&$("rhost").clientWidth>0)renderCharts()})});
+  const ro=new ResizeObserver(()=>{cancelAnimationFrame(rz);rz=requestAnimationFrame(()=>{const stale=h=>h.clientWidth>0&&(!h._prev||h._prev.W!==Math.max(280,Math.floor(h.clientWidth)));if(!prog.table&&(stale($("rhost"))||stale($("ahost"))))renderCharts()})});
   ro.observe($("rhost"));ro.observe($("ahost"));
+}
+
+/* ---------- analysis theater, report card, session graded ---------- */
+const Think={on:false,cells:[],last:0,timer:0,latest:null,label:"",
+  init(){const tb=$("tb");if(tb._built)return;tb._built=true;
+    for(let r=0;r<8;r++)for(let f=0;f<8;f++){const i=document.createElement("i");if((r+f)%2===1)i.className="d";const sp=document.createElement("span");i.appendChild(sp);tb.insertBefore(i,$("tbov"));this.cells.push(sp)}},
+  start(){this.on=true;this.init();$("think").hidden=false;$("evb").style.height="50%";$("tev").textContent="0.0";$("tline").textContent=""},
+  stop(){this.on=false;this.latest=null;clearTimeout(this.timer);this.timer=0;$("think").hidden=true;$("tbov").textContent=""},
+  begin(job){
+    const b=fenBoard(job.fen);
+    this.cells.forEach((sp,k)=>{const sq="abcdefgh"[k%8]+(8-Math.floor(k/8)),pc=b[sq];sp.className=pc?(pc.c==="w"?"pw":"pb"):"";sp.textContent=pc?GLYPH[pc.t]+"︎":""});
+    $("tbov").textContent="";this.latest=null;
+    $("tinfo").textContent=`${this.label} · move ${job.fen.split(" ")[5]||1}`;
+  },
+  info(job,i){
+    this.latest={job,i};
+    if(this.timer)return;
+    const wait=Math.max(0,220-(performance.now()-this.last));
+    this.timer=setTimeout(()=>{this.timer=0;this.paint()},wait);
+  },
+  paint(){
+    const L=this.latest;if(!L||!this.on)return;this.last=performance.now();
+    const {job,i}=L,s=job.fen.split(" ")[1]==="w"?1:-1;
+    const cpw=i.type==="mate"?(i.v===0?-1:Math.sign(i.v))*s*10000:i.v*s;
+    $("evb").style.height=wp(cpw)+"%";
+    $("tev").textContent=i.type==="mate"?(cpw>0?"+":"−")+"M"+Math.abs(i.v):(cpw>0?"+":cpw<0?"−":"")+Math.abs(cpw/100).toFixed(1);
+    const ov=$("tbov");ov.textContent="";
+    const u1=i.pv[0],u2=i.pv[1];
+    if(u1)Ov.arrow(u1.slice(0,2),u1.slice(2,4),"good",0,ov,"w");
+    if(u2)Ov.arrow(u2.slice(0,2),u2.slice(2,4),"bad",.05,ov,"w");
+    try{$("tline").textContent=`depth ${i.depth} · ${pvSan(job.fen,i.pv,4).join(" ")}`}catch(e){}
+  }
+};
+Engine.onStart=job=>{if(Think.on)Think.begin(job)};
+Engine.onInfo=(job,i)=>{if(Think.on)Think.info(job,i)};
+const GRADES=[[90,"A"],[80,"B"],[70,"C"],[60,"D"],[0,"F"]];
+const gradeOf=v=>(GRADES.find(g=>v>=g[0])||GRADES[4])[1];
+const LEAK_NOTE={
+  hung:"Stop hanging pieces! Before every move, ask what it leaves undefended.",
+  allowedMate:"Watch for mating threats. Check every check they have before you move.",
+  missedMate:"You had forced mates. Look at every check first.",
+  passiveKing:"Wake your king up in the endgame. It is a fighting piece!",
+  missedTactic:"Hunt for tactics: scan checks, captures and threats on every move.",
+  endgame:"Slow down in endgames and calculate king routes and pawn races.",
+  opening:"Finish development and castle before anything fancy.",
+  quiet:"Quiet positions are costing you. Improve your worst piece each move."};
+function countUp(el,to,ms){
+  el._cu=(el._cu||0)+1;const id=el._cu;
+  if(!ms||!motion()){el.textContent=Math.round(to);return}
+  const t0=performance.now();
+  const f=t=>{if(el._cu!==id)return;const k=Math.min(1,(t-t0)/ms),e=1-Math.pow(1-k,3);el.textContent=Math.round(to*e);if(k<1)requestAnimationFrame(f)};
+  requestAnimationFrame(f);
+}
+function restartAnim(el){el.style.animation="none";void el.offsetWidth;el.style.animation=""}
+function renderReport(animate){
+  const sec=$("report"),games=state.order.map(k=>state.games[k]).filter(g=>g&&g.acc!=null);
+  if(!games.length){sec.classList.add("off");return}
+  sec.classList.remove("off");
+  const avg=games.reduce((a,g)=>a+g.acc,0)/games.length,grade=gradeOf(avg),issues=computeIssues();
+  $("rc-sub").textContent=`${games.length} game${games.length===1?"":"s"} analyzed`;
+  const gr=$("rc-grade");gr.textContent=grade;gr.className="rc-grade g"+grade;gr.setAttribute("aria-label","Grade "+grade);
+  $("rc-note").textContent=issues.length?LEAK_NOTE[issues[0].t]:"Clean games. Nothing to circle in red!";
+  if(animate){restartAnim(gr);restartAnim($("rc-note"))}
+  countUp($("rc-acc"),avg,animate?1100:0);
+}
+let gradedKey="";
+function checkSession(){
+  const ps=state.puzzles;if(!ps.length||!ps.every(p=>state.solved[p.id]))return;
+  const key=ps.map(p=>p.id).join(",");if(key===gradedKey)return;gradedKey=key;
+  setTimeout(showSession,motion()?1500:200);
+}
+function showSession(){
+  if(document.querySelector(".modal"))return;
+  const total=state.puzzles.length,den=Math.max(1,sess.solvedAll),rate=sess.solvedFirst/den*100,grade=rate>=85?"A":rate>=70?"B":rate>=55?"C":rate>=40?"D":"F";
+  const games=state.order.map(k=>state.games[k]).filter(g=>g&&g.acc!=null);
+  const avg=games.length?Math.round(games.reduce((a,g)=>a+g.acc,0)/games.length):null;
+  const issues=computeIssues();
+  const NOTE={A:"Clean sheet! You found nearly all of them first try.",B:"Strong session. The near misses are where the learning is.",C:"Solid work. Check what each move leaves undefended before you play it.",D:"You got there in the end. Lean on checks and captures before the hint button.",F:"A tough set, and the hard ones teach the most. Replay the ones you missed."};
+  const prev=document.activeElement;
+  const wrap=mk("div","modal",null,document.body);wrap.setAttribute("role","dialog");wrap.setAttribute("aria-modal","true");wrap.setAttribute("aria-labelledby","sg-h");
+  const card=mk("div","scard",null,wrap);
+  mk("h2",null,"Session graded",card).id="sg-h";
+  const row=mk("div","sg-row",null,card);
+  const gr=mk("div","rc-grade g"+grade,grade,row);gr.setAttribute("role","img");gr.setAttribute("aria-label","Grade "+grade);
+  const ul=mk("ul","sg-stats",null,row);
+  const li=(a,b)=>{const l=mk("li",null,null,ul);mk("b",null,a,l);l.append(" "+b)};
+  li(`${total} of ${total}`,"puzzles solved");li(`${sess.solvedFirst}`,"found first try");li(`${sess.best}`,"best streak in a row");if(avg!=null)li(avg+"%","average game accuracy");
+  const note=mk("p","sg-note",null,card);mk("span","swipe",NOTE[grade],note);
+  if(issues.length)mk("p","sg-leak","Biggest leak: "+TAGS[issues[0].t].label.toLowerCase()+". "+LEAK_NOTE[issues[0].t],card);
+  const b=mk("button","primary","Keep training",card);b.type="button";
+  const close=()=>{wrap.remove();document.removeEventListener("keydown",esc);try{prev&&prev.focus&&prev.focus()}catch(e){}};
+  const esc=e=>{if(e.key==="Escape")close()};
+  document.addEventListener("keydown",esc);b.onclick=close;wrap.addEventListener("pointerdown",e=>{if(e.target===wrap)close()});
+  b.focus();Snd.thud();
 }
 
 /* ---------- per-game habit checklist ---------- */
@@ -1350,8 +1770,18 @@ function route(){
   document.querySelectorAll("[data-page]").forEach(e=>{e.hidden=e.dataset.page!==h});
   document.querySelectorAll(".nav a").forEach(a=>{if(a.dataset.go===h)a.setAttribute("aria-current","page");else a.removeAttribute("aria-current")});
   document.title=PAGE_TITLE[h]+" · Blunder Lab";
-  if(h==="progress")renderProgress();
+  [...document.querySelectorAll("[data-page]")].filter(e=>!e.hidden).forEach((e,i)=>e.style.setProperty("--i",i));
+  placeInk();
+  if(h==="progress"){$("rhost")._prev=null;$("ahost")._prev=null;renderProgress()}
+  if(h==="habits")renderHabits();
 }
+function placeInk(){
+  const a=document.querySelector(".nav a[aria-current]"),ink=$("navink");if(!a||!ink)return;
+  ink.style.left=a.offsetLeft+"px";ink.style.width=a.offsetWidth+"px";ink.style.top=a.offsetTop+"px";ink.style.height=a.offsetHeight+"px";
+}
+window.addEventListener("resize",placeInk);
+const syncSnd=()=>{const b=$("snd");b.setAttribute("aria-pressed",String(Snd.on));b.textContent=Snd.on?"Sound on":"Sound off"};
+$("snd").onclick=()=>{Snd.on=!Snd.on;syncSnd();savePrefs();if(Snd.on){Snd.click();setTimeout(()=>Snd.pen(),120)}};
 function go(p){if(location.hash==="#/"+p)route();else location.hash="#/"+p}
 window.addEventListener("hashchange",()=>{route();window.scrollTo(0,0)});
 
@@ -1368,17 +1798,25 @@ function renderHabits(){
   if(!ready.length){mk("div","empty","Fetch your games again to run the habit checks on them.",box);return}
   const band=BANDS[bi],tot={};
   for(const g of ready)for(const k in g.hab){const t=tot[k]||(tot[k]=[0,0]);t[0]+=g.hab[k][0];t[1]+=g.hab[k][1]}
-  const used=new Set(),unm=[];let good=0,total=0,weak=null;
+  const half=Math.ceil(ready.length/2);
+  const deltaFor=k=>{
+    if(ready.length<6)return null;
+    const agg=gs=>{let a=0,n=0;gs.forEach(g=>{const r=g.hab[k];if(r){a+=r[0];n+=r[1]}});return n>=3?a/n*100:null};
+    const r=agg(ready.slice(0,half)),o=agg(ready.slice(half));return r==null||o==null?null:Math.round(r-o);
+  };
+  const used=new Set(),unm=[];let good=0,total=0,weak=null,ri=0;
   for(const [text,keys] of band.h){
     const ms=(keys||[]);
     if(!ms.length){unm.push(text);continue}
     const row=mk("div","hb",null,box);mk("div","hb-t",text,row);
     for(const k of ms){
       used.add(k);const M=MEASURES[k],t=tot[k]||[0,0],pct=t[1]?Math.round(t[0]/t[1]*100):null;
-      const line=mk("div","hb-m",null,row);mk("span","lab",M.l,line);
+      const line=mk("div","hb-m",null,row);line.style.setProperty("--d",(ri++*.07).toFixed(2)+"s");mk("span","lab",M.l,line);
       const val=mk("span","val",pct==null?"No chances yet":pct+"%",line);
       if(pct!=null){mk("span","muted small",` ${t[0]} of ${t[1]} ${M.u}${t[1]<4?" · small sample":""}`,val);
         const bar=mk("div","bar",null,line);const i=mk("i",pct>=80?"good":pct>=50?"mid":"low",null,bar);i.style.width=Math.max(pct,2)+"%";
+        if(pct>=80){const st=mk("span","star","★",val);st.setAttribute("role","img");st.setAttribute("aria-label","Followed at least 80% of the time")}
+        const dl=deltaFor(k);if(dl!=null&&Math.abs(dl)>=10){const d=mk("span","delta "+(dl>0?"up":"down"),(dl>0?"↑ +":"↓ −")+Math.abs(dl)+"%",val);d.title="Recent games compared with your older ones"}
         total++;if(pct>=80)good++;if(t[1]>=3&&(!weak||pct<weak.pct))weak={l:M.l,pct}}
     }
   }
@@ -1481,7 +1919,7 @@ async function start(){
   const have=state.order.filter(k=>state.games[k]).length;
   if(have){renderAll();setMsg(`Loaded ${have} saved games from your last visit. Pick a time control and fetch to refresh.`)}
   try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
-  renderHabits();route();
+  renderHabits();renderReport(true);route();updateCount();
   await refreshRatings();
 }
 boot();
