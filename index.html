@@ -80,6 +80,7 @@ a{color:var(--accent)}
 .nav{display:flex;flex-wrap:wrap;gap:6px 18px}
 .nav a{font:500 .76rem/1 var(--f-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ink);text-decoration:none;padding:4px 2px;border-bottom:2px solid var(--ink)}
 .nav a:hover{background:var(--hi);color:#151b33}
+.nav a[aria-current="page"]{background:var(--ink);color:var(--surface)}
 .intro{margin:0;max-width:44ch;font-size:1.08rem}
 
 /* panels */
@@ -171,9 +172,9 @@ details[open] summary{margin-bottom:10px}
 .marks dt{justify-self:start}
 .marks dd{margin:0;font-size:.92rem;color:var(--muted)}
 .games{display:grid}
-.game{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"who res" "meta meta" "pz pz";gap:8px 14px;align-items:center;padding:16px 0;border-top:1px solid var(--line)}
+.game{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"who res" "meta meta" "pz pz" "gdet gdet";gap:8px 14px;align-items:center;padding:16px 0;border-top:1px solid var(--line)}
 .game:first-child{border-top:0;padding-top:4px}
-@media (min-width:900px){.game{grid-template-columns:minmax(0,2.3fr) 76px minmax(0,2.2fr) minmax(0,3fr);grid-template-areas:"who res meta pz"}}
+@media (min-width:900px){.game{grid-template-columns:minmax(0,2.3fr) 76px minmax(0,2.2fr) minmax(0,3fr);grid-template-areas:"who res meta pz" "gdet gdet gdet gdet"}}
 .g-who{grid-area:who;display:grid;gap:2px;min-width:0}
 .g-who .vs{font-weight:700;overflow-wrap:anywhere}
 .g-who .mono{font-size:.78rem}
@@ -182,6 +183,17 @@ details[open] summary{margin-bottom:10px}
 .g-meta{grid-area:meta;font-size:.92rem;color:var(--muted)}
 .g-meta .acc{font:700 1.05rem var(--f-mono);color:var(--ink)}
 .game .pz{grid-area:pz}
+.game .gdet{grid-area:gdet}
+.ghl{list-style:none;margin:0;padding:0;display:grid;gap:0}
+.gh-i{display:grid;grid-template-columns:2.2rem minmax(0,1fr);gap:2px 10px;align-items:start;padding:9px 0;border-top:1px solid var(--line)}
+.gh-i:first-child{border-top:0}
+.gh-i .mk{font:800 1.15rem/1.2 var(--f-mono);text-align:center}
+.gh-i.yes .mk{color:var(--good)}.gh-i.no .mk{color:var(--pen)}
+.gh-i .t{font-weight:700;font-size:.92rem;overflow-wrap:anywhere}
+.gh-i .s{font-size:.82rem;color:var(--muted)}
+.gh-i.now{background:var(--hi-soft);margin:0 -8px;padding-left:8px;padding-right:8px}
+.gh-i .chip{margin-left:8px;padding:2px 6px;font-size:.7rem}
+.gh-note{margin:10px 0 0}
 .res{font:800 .95rem/1 var(--f-display);letter-spacing:.1em;text-transform:uppercase;padding:4px 9px 3px;border:2px solid;border-radius:2px;transform:rotate(-3deg);display:inline-block}
 .res.W{color:var(--good)}.res.L{color:var(--bad)}.res.D{color:var(--muted)}
 .pz{display:flex;flex-wrap:wrap;gap:8px}
@@ -241,12 +253,12 @@ table.t{border-collapse:collapse;font-size:.88rem;width:100%}
   <header class="mast">
     <h1>Blunder<span class="nag" aria-hidden="true">??</span><span class="lab"> Lab</span></h1>
     <div class="mast-side">
-      <nav class="nav" aria-label="Sections"><a href="#setup">Load</a><a href="#puzzles">Puzzles</a><a href="#progress">Progress</a><a href="#habits">Habits</a><a href="#games-panel">Games</a></nav>
+      <nav class="nav" aria-label="Pages"><a href="#/train" data-go="train">Train</a><a href="#/progress" data-go="progress">Progress</a><a href="#/habits" data-go="habits">Habits</a><a href="#/games" data-go="games">Games</a></nav>
       <p class="intro">Your recent chess.com games, checked by Stockfish in your browser. The biggest swings become puzzles: find the move you missed.</p>
     </div>
   </header>
 
-  <section class="panel" id="setup" aria-labelledby="load-h">
+  <section class="panel" id="setup" data-page="train" aria-labelledby="load-h">
     <div class="ph"><h2 id="load-h">Load your games</h2><span class="eyebrow">chess.com · robbiestells</span></div>
     <div class="setup">
       <div class="setup-main">
@@ -282,7 +294,7 @@ table.t{border-collapse:collapse;font-size:.88rem;width:100%}
     </details>
   </section>
 
-  <div class="main" id="puzzles">
+  <div class="main" id="puzzles" data-page="train">
     <section class="panel trainer" aria-labelledby="pz-h">
       <div class="ph"><h2 id="pz-h">Puzzle</h2><span class="eyebrow" id="pzCount">0 / 0 solved</span></div>
       <div class="prompt">
@@ -302,6 +314,10 @@ table.t{border-collapse:collapse;font-size:.88rem;width:100%}
     </section>
 
     <div class="side">
+      <section class="panel" aria-labelledby="gh-h">
+        <div class="ph"><h2 id="gh-h">Habits in this game</h2><span class="eyebrow" id="gh-lvl"></span></div>
+        <div id="gh"><div class="empty">Open a puzzle to see which habits you followed in that game.</div></div>
+      </section>
       <section class="panel" aria-labelledby="is-h">
         <div class="ph"><h2 id="is-h">Common issues</h2><span class="eyebrow">by win chance lost</span></div>
         <div class="issues" id="issues"><div class="empty">Once games are analyzed, mistakes are grouped by type here so you can see which habit costs you the most.</div></div>
@@ -318,7 +334,7 @@ table.t{border-collapse:collapse;font-size:.88rem;width:100%}
     </div>
   </div>
 
-  <section class="panel" id="progress" aria-labelledby="pr-h">
+  <section class="panel" id="progress" data-page="progress" aria-labelledby="pr-h">
     <div class="ph"><h2 id="pr-h">Progress</h2><button id="tabletoggle" class="small" aria-pressed="false">Table view</button></div>
     <div class="pfilters">
       <label class="f">History<select id="range"><option value="1">Last month</option><option value="3" selected>Last 3 months</option><option value="6">Last 6 months</option><option value="12">Last 12 months</option><option value="24">Last 2 years</option></select></label>
@@ -346,7 +362,7 @@ table.t{border-collapse:collapse;font-size:.88rem;width:100%}
     <div id="ptables" hidden></div>
   </section>
 
-  <section class="panel" id="habits" aria-labelledby="hb-h">
+  <section class="panel" id="habits" data-page="habits" aria-labelledby="hb-h">
     <div class="ph"><h2 id="hb-h">Habit check</h2><span class="eyebrow">chessbrah · building habits</span></div>
     <div class="pfilters">
       <label class="f">Level<select id="hband"><option value="auto" selected>Auto (from your rating)</option><option value="0">0–700</option><option value="1">700–1100</option><option value="2">1100–1550</option><option value="3">1550–2000+</option></select></label>
@@ -359,7 +375,7 @@ table.t{border-collapse:collapse;font-size:.88rem;width:100%}
     <p class="note">The habit lists come from Aman Hambleton’s (GM, chessbrah) Building Habits series. Each check is an approximation worked out from your moves and Stockfish’s flags, so treat it as a guide, not a verdict.</p>
   </section>
 
-  <section class="panel" id="games-panel" aria-labelledby="gm-h">
+  <section class="panel" id="games-panel" data-page="games" aria-labelledby="gm-h">
     <div class="ph"><h2 id="gm-h">Games</h2><span class="eyebrow">newest first</span></div>
     <div class="games" id="games"><div class="empty">No games analyzed yet.</div></div>
   </section>
@@ -830,8 +846,10 @@ function renderGames(){
       const b=mk("button",(state.solved[p.id]?"done ":"")+(i===state.cur?"cur":""),null,pzBox);
       b.type="button";b.setAttribute("aria-label",`Move ${p.moveNo}, ${nag.t.toLowerCase()}, loses ${p.drop} percent win chance${state.solved[p.id]?", solved":""}`);
       mk("span",null,"Move "+p.moveNo,b);mk("span","nag",nag.s,b);mk("span","pct","−"+p.drop+"%",b);
-      b.onclick=()=>openPuzzle(i);
+      b.onclick=()=>{openPuzzle(i);go("train")};
     });
+    const det=mk("details","gdet",null,d);mk("summary",null,"Habit checklist",det);const hb=mk("div",null,null,det);
+    det.addEventListener("toggle",()=>{if(det.open)gameHabits(g,hb)});
   }
 }
 /* ---------- plain-text explanations ---------- */
@@ -915,7 +933,7 @@ function clearTrainer(){
   $("ctx").textContent="Each game gives you its 1–2 worst moments. Your job is to find the move Stockfish wanted.";
   $("fb").className="feedback info";$("fb").textContent="";$("pv").textContent="";$("why").hidden=true;
   ["hint","reveal","retry","next"].forEach(id=>{$(id).disabled=true});
-  drawBoard();
+  showGameHabits(null);drawBoard();
 }
 function openPuzzle(i){
   const p=state.puzzles[i];if(!p)return;
@@ -930,7 +948,7 @@ function openPuzzle(i){
   $("pv").textContent="";$("why").hidden=true;
   ["hint","reveal","retry"].forEach(id=>$(id).disabled=false);
   $("next").disabled=state.puzzles.length<2;
-  drawBoard();renderGames();
+  drawBoard();renderGames();showGameHabits(p);
   $("pzCount").textContent=`${Object.keys(state.solved).filter(id=>state.puzzles.some(q=>q.id===id)).length} / ${state.puzzles.length} solved`;
 }
 function drawBoard(){
@@ -1209,6 +1227,7 @@ function renderSubs(){
   $("asub").textContent=a.join("  ·  ");
 }
 function renderCharts(){
+  if(!$("rhost").clientWidth)return; // page is hidden; route() redraws when shown
   const change=prog.mode==="change",rs=[],as=[];
   let anyR=false,anyA=false;
   CLASSES.forEach(([c,label])=>{
@@ -1286,9 +1305,53 @@ $("loadhist").onclick=loadHistory;
 $("user").addEventListener("change",()=>{prog.note="";refreshRatings()});
 if(window.ResizeObserver){
   let rz=0;
-  const ro=new ResizeObserver(()=>{cancelAnimationFrame(rz);rz=requestAnimationFrame(()=>{if(!prog.table)renderCharts()})});
+  const ro=new ResizeObserver(()=>{cancelAnimationFrame(rz);rz=requestAnimationFrame(()=>{if(!prog.table&&$("rhost").clientWidth>0)renderCharts()})});
   ro.observe($("rhost"));ro.observe($("ahost"));
 }
+
+/* ---------- per-game habit checklist ---------- */
+const TAG_HAB={hung:"hang",missedTactic:"tactic",missedMate:"mate",passiveKing:"king"};
+function bandFor(g){return prog.hband!=="auto"?+prog.hband:(g.elo==null?-1:BANDS.findIndex(b=>g.elo<b.hi))}
+function gameHabits(g,host,cur){
+  host.textContent="";
+  if(!g.hab||g.habV!==HAB_V){mk("div","muted","Fetch your games again to check habits for this game.",host);return null}
+  const bi=bandFor(g);
+  if(bi<0){mk("div","muted","This game doesn’t include your rating. Pick a level on the Habits page.",host);return null}
+  const band=BANDS[bi],ul=mk("ul","ghl",null,host),unm=[];
+  let shown=0;
+  for(const [text,keys] of band.h){
+    if(!keys||!keys.length){unm.push(text);continue}
+    for(const k of keys){
+      const r=g.hab[k];if(!r)continue;
+      const all=r[0]===r[1],li=mk("li","gh-i "+(all?"yes":"no")+(cur===k?" now":""),null,ul);shown++;
+      const m=mk("span","mk",all?"✓":"✗",li);m.setAttribute("aria-label",all?"Followed":"Missed");
+      const b=mk("div",null,null,li);
+      const t=mk("div","t",text,b);if(cur===k)mk("span","chip","this puzzle",t);
+      mk("div","s",MEASURES[k].l+(r[1]>1?` · ${r[0]} of ${r[1]}`:""),b);
+    }
+  }
+  if(!shown)mk("li","gh-i",null,ul).textContent="No measurable habits came up in this game.";
+  mk("p","note gh-note","Habits that didn’t come up in this game are left out.",host);
+  if(unm.length){const d=mk("details",null,null,host);mk("summary",null,`Keep in mind (${unm.length})`,d);const ol=mk("ol","hlist-un",null,d);unm.forEach(t=>mk("li",null,t,ol))}
+  return band.name;
+}
+function showGameHabits(p){
+  const g=p&&state.games[p.game],host=$("gh");
+  if(!g){host.textContent="";mk("div","empty","Open a puzzle to see which habits you followed in that game.",host);$("gh-lvl").textContent="";return}
+  const n=gameHabits(g,host,TAG_HAB[p.tag]);$("gh-lvl").textContent=n?"level "+n:"";
+}
+
+/* ---------- pages ---------- */
+const PAGES=["train","progress","habits","games"],PAGE_TITLE={train:"Train",progress:"Progress",habits:"Habit check",games:"Games"};
+function route(){
+  let h=(location.hash||"").replace(/^#\/?/,"");if(!PAGES.includes(h))h="train";
+  document.querySelectorAll("[data-page]").forEach(e=>{e.hidden=e.dataset.page!==h});
+  document.querySelectorAll(".nav a").forEach(a=>{if(a.dataset.go===h)a.setAttribute("aria-current","page");else a.removeAttribute("aria-current")});
+  document.title=PAGE_TITLE[h]+" · Blunder Lab";
+  if(h==="progress")renderProgress();
+}
+function go(p){if(location.hash==="#/"+p)route();else location.hash="#/"+p}
+window.addEventListener("hashchange",()=>{route();window.scrollTo(0,0)});
 
 /* ---------- habit panel ---------- */
 function renderHabits(){
@@ -1416,7 +1479,7 @@ async function start(){
   const have=state.order.filter(k=>state.games[k]).length;
   if(have){renderAll();setMsg(`Loaded ${have} saved games from your last visit. Pick a time control and fetch to refresh.`)}
   try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
-  renderHabits();
+  renderHabits();route();
   await refreshRatings();
 }
 boot();
