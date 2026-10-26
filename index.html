@@ -222,6 +222,17 @@ table.t{border-collapse:collapse;font-size:.88rem;width:100%}
 .t th,.t td{text-align:left;padding:7px 14px 7px 0;border-top:1px solid var(--line);white-space:nowrap}
 .t th{font:500 .72rem var(--f-mono);color:var(--muted);letter-spacing:.1em;text-transform:uppercase;border-top:0;border-bottom:2px solid var(--ink)}
 .t td.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.habits{display:grid;gap:20px}
+.hb{display:grid;gap:7px}
+.hb-t{font-weight:700;overflow-wrap:anywhere}
+.hb-m{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 14px;align-items:baseline}
+.hb-m .lab{font-size:.88rem;color:var(--muted)}
+.hb-m .val{font:700 .9rem var(--f-mono);font-variant-numeric:tabular-nums;text-align:right}
+.hb-m .val .muted{font-weight:500}
+.hb-m .bar i.good{background:var(--s3)}.hb-m .bar i.mid{background:var(--s2)}.hb-m .bar i.low{background:var(--pen)}
+@media (max-width:560px){.hb-m{grid-template-columns:minmax(0,1fr)}.hb-m .val{text-align:left}}
+.hlist-un{margin:10px 0 0;padding-left:1.3em;display:grid;gap:5px;color:var(--muted);font-size:.9rem}
+.hhow{display:grid;gap:10px;margin:10px 0 0}.hhow dt{font-weight:700;font-size:.9rem}.hhow dd{margin:2px 0 0;color:var(--muted);font-size:.86rem}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
@@ -230,7 +241,7 @@ table.t{border-collapse:collapse;font-size:.88rem;width:100%}
   <header class="mast">
     <h1>Blunder<span class="nag" aria-hidden="true">??</span><span class="lab"> Lab</span></h1>
     <div class="mast-side">
-      <nav class="nav" aria-label="Sections"><a href="#setup">Load</a><a href="#puzzles">Puzzles</a><a href="#progress">Progress</a><a href="#games-panel">Games</a></nav>
+      <nav class="nav" aria-label="Sections"><a href="#setup">Load</a><a href="#puzzles">Puzzles</a><a href="#progress">Progress</a><a href="#habits">Habits</a><a href="#games-panel">Games</a></nav>
       <p class="intro">Your recent chess.com games, checked by Stockfish in your browser. The biggest swings become puzzles: find the move you missed.</p>
     </div>
   </header>
@@ -333,6 +344,19 @@ table.t{border-collapse:collapse;font-size:.88rem;width:100%}
       </div>
     </div>
     <div id="ptables" hidden></div>
+  </section>
+
+  <section class="panel" id="habits" aria-labelledby="hb-h">
+    <div class="ph"><h2 id="hb-h">Habit check</h2><span class="eyebrow">chessbrah · building habits</span></div>
+    <div class="pfilters">
+      <label class="f">Level<select id="hband"><option value="auto" selected>Auto (from your rating)</option><option value="0">0–700</option><option value="1">700–1100</option><option value="2">1100–1550</option><option value="3">1550–2000+</option></select></label>
+      <div class="muted small" id="hnote" role="status"></div>
+    </div>
+    <p class="muted" id="hsum" role="status"></p>
+    <div class="habits" id="hlist"><div class="empty">Analyze some games and this will show how often you follow the habits for your rating.</div></div>
+    <details id="hunm" hidden><summary id="hunm-sum"></summary><ol class="hlist-un" id="hunm-list"></ol></details>
+    <details><summary>How each habit is checked</summary><dl class="hhow" id="hhow"></dl></details>
+    <p class="note">The habit lists come from Aman Hambleton’s (GM, chessbrah) Building Habits series. Each check is an approximation worked out from your moves and Stockfish’s flags, so treat it as a guide, not a verdict.</p>
   </section>
 
   <section class="panel" id="games-panel" aria-labelledby="gm-h">
@@ -456,7 +480,8 @@ function parseOne(txt){
   mv=mv.replace(/\$\d+/g," ").replace(/\d+\.(\.\.)?/g," ").replace(/(1-0|0-1|1\/2-1\/2|\*)\s*$/," ");
   const sans=mv.split(/\s+/).filter(t=>t&&!/^(1-0|0-1|1\/2-1\/2|\*)$/.test(t));
   if(!headers.White||!sans.length)return null;
-  return {headers,sans};
+  const clk=[...txt.matchAll(/\[%clk\s+(\d+):(\d+):(\d+(?:\.\d+)?)\]/g)].map(m=>+m[1]*3600+ +m[2]*60+ +m[3]);
+  return {headers,sans,clk};
 }
 const FILTER_LABEL={rapid:"rapid",1510:"15 | 10",blitz:"blitz",bullet:"bullet",daily:"daily",all:"any type"};
 function tcInfo(tc){
@@ -577,6 +602,126 @@ async function analyzeGame(g,color,ms,onProg){
   return {mistakes,userMoves,plies:moves.length,acc:accN?Math.round(accSum/accN*10)/10:null,accMoves:accN};
 }
 
+/* ---------- habit checks (Chessbrah "Building Habits") ---------- */
+const HAB_V=1;
+const MEASURES={
+  castle8:{l:"Castled by move 8",u:"games",d:"Counts games that lasted at least 8 of your moves."},
+  castle12:{l:"Castled by move 12",u:"games",d:"Counts games that lasted at least 12 of your moves."},
+  center5:{l:"Pawn on d4, e4, d5 or e5 by move 5",u:"games",d:"A pawn of yours on one of the four center squares after your 5th move."},
+  expand8:{l:"Two or more center pawns advanced by move 8",u:"games",d:"At least two of your c, d, e and f pawns have moved two or more squares after your 8th move."},
+  luft:{l:"King has an escape square by move 15",u:"games",d:"After your 15th move your king is off the back rank, or has an empty square on the rank in front of it."},
+  pawnCap:{l:"Pawn captures that go toward the center",u:"captures",d:"Each time you captured with a pawn: did it move toward the d and e files (like cxd or fxe)?"},
+  pinAtk:{l:"Answered a bishop or knight on g4, g5, b4 or b5 with an a or h pawn",u:"chances",d:"When an enemy bishop or knight landed there and your a or h pawn could attack it, did you attack it right away?"},
+  free:{l:"Took free pieces when they were on offer",u:"chances",d:"A knight, bishop, rook or queen you could capture with no recapture. Counts if you took it or something bigger, or mated."},
+  trade:{l:"Took a capture of equal or greater value",u:"chances",d:"Whenever you could capture a piece with something worth the same or less, did you capture a piece?"},
+  tradeUp:{l:"Trades made while ahead rather than behind",u:"trades",d:"Trades you started (you captured, they recaptured) while two or more points of material apart. Counts the share made while ahead."},
+  hang:{l:"Games without hanging a piece",u:"games",d:"No move that Stockfish flagged as leaving material hanging."},
+  tactic:{l:"Games with no missed tactic",u:"games",d:"No move that missed a winning capture or check that Stockfish found."},
+  mate:{l:"Games with no missed forced mate",u:"games",d:"No move that threw away a forced checkmate."},
+  king:{l:"Endgames without a passive king",u:"games",d:"Games that reached an endgame where Stockfish did not flag a move that should have been a king move."},
+  gambit:{l:"Games without a gambit",u:"games",d:"A gambit is a pawn given up in your first 10 moves that Stockfish did not flag as a mistake, with no immediate recapture."},
+  sac:{l:"Games without a sacrifice",u:"games",d:"A sacrifice is two or more points of material given up over three plies in a move Stockfish did not flag as a mistake."},
+  resign:{l:"Lost games you played out",u:"losses",d:"Counts only games you lost: did you play on rather than resign?"},
+  time:{l:"Games where you used no more time than your opponent",u:"games",d:"Compares total clock time spent. Needs a game of at least 10 moves."}
+};
+const BANDS=[
+ {name:"0–700",hi:700,h:[
+  ["No Pre-Moves"],["No Tactics"],["No Gambits",["gambit"]],["No Sacrifices",["sac"]],["Know how all the pieces move"],
+  ["Control and move towards the center",["center5"]],["Castle as soon as possible",["castle8"]],
+  ["Don’t hang free pieces – Take free pieces",["hang","free"]],["Activate King in the endgame – Attack pawns",["king"]],
+  ["Capture pieces of equal or greater value whenever possible (avoid Q for 2R trade for now)",["trade"]],
+  ["Remember, pawns do not count as pieces"],
+  ["Always attack a Bishop or Knight on g4/g5/b4/b5 with the a or h pawn immediately",["pinAtk"]],
+  ["Make an escape square for the King once finished development",["luft"]],
+  ["Spend just as much time on moves as your opponent (or less) – Use your time to think, but don’t get low on time.",["time"]],
+  ["Spend a lot of time at the beginning to follow all the rules"]]},
+ {name:"700–1100",hi:1100,h:[
+  ["No gambits",["gambit"]],["No Sacrifices",["sac"]],["Premoves < 10 seconds"],["Always Play Until Checkmate",["resign"]],
+  ["Know the basic tactics (forks, pins, skewers, discoveries)",["tactic"]],["Capture towards the center with pawns",["pawnCap"]],
+  ["Control and move toward the center",["center5"]],["Castle early (but not asap)",["castle12"]],
+  ["Continue taking most available trades",["trade"]],["Develop your pieces to more aggressive squares"],
+  ["Make an escape square for the King once finished development",["luft"]],["Rooks belong behind passed pawns"],
+  ["Know all the basic checkmates (Queen, Rook, Queen + Rook, Rook + Rook)",["mate"]],
+  ["Expand in the center early with pawns in order to gain space",["expand8"]]]},
+ {name:"1100–1550",hi:1550,h:[
+  ["No Gambits",["gambit"]],["No Sacrifices",["sac"]],["Never resign",["resign"]],["Know Basic and Advanced Tactics",["tactic"]],
+  ["Learn basic openings and their responses"],["Learn to play active chess, not reactive"],
+  ["Control and move toward the center",["center5"]],["3 pieces > Queen, 2 Rooks > Queen, 2 pieces > Rook"],
+  ["Castle early (but not asap)",["castle12"]],["Don’t blunder any pieces and take free pieces",["hang","free"]],
+  ["Make an escape square for the King",["luft"]],["Know basic pawn endgames, opposition, and Rook endgames"],
+  ["Rooks belong behind passed pawns"],["Premove all moves when under 2 seconds"],
+  ["Expand in the center early with pawns in order to gain space",["expand8"]]]},
+ {name:"1550–2000+",hi:Infinity,h:[
+  ["Gambits ok"],["Sacrifices ok"],["Never resign",["resign"]],["Know Basic and Advanced Tactics",["tactic"]],
+  ["Master e4 – e5 opening theory"],["Know all checkmate patterns",["mate"]],["Learn new openings besides 4 knights"],
+  ["Know opposition, pawn, and Rook endgames"],["Know Lucena, Philidor, and Knight vs Bishop endgames"],
+  ["Don’t blunder any pieces and take free pieces",["hang","free"]],["Master previous habits"],["Know where the Rooks belong"],
+  ["Avoid trades when down material and trade when up",["tradeUp"]],["Look for key squares and outposts"],
+  ["Understand pawn structures and spot weak pawns"]]}
+];
+function fenBoard(fen){const b={};fen.split(" ")[0].split("/").forEach((row,ri)=>{let f=0;for(const c of row){if(/\d/.test(c))f+=+c;else{b["abcdefgh"[f]+(8-ri)]={t:c.toLowerCase(),c:c===c.toUpperCase()?"w":"b"};f++}}});return b}
+function matDiff(fen,color){let d=0;for(const c of fen.split(" ")[0]){const v=PVAL[c.toLowerCase()];if(v&&/[a-z]/i.test(c))d+=(c===c.toUpperCase()?1:-1)*v*(color==="w"?1:-1)}return d}
+function eloOf(g,color){const v=parseInt(g.headers[color==="w"?"WhiteElo":"BlackElo"],10);return isNaN(v)?null:v}
+// Returns {habit: [followed, chances]} for one game, from the moves plus Stockfish's flagged mistakes.
+function computeHabits(g,color,mistakes){
+  try{
+    const H={},add=(k,ok)=>{const a=H[k]||(H[k]=[0,0]);a[0]+=ok?1:0;a[1]++};
+    const ch=new Chess(),fens=[ch.fen()],mv=[];
+    for(const s of g.sans){const m=ch.move(s,{sloppy:true});if(!m)break;mv.push(m);fens.push(ch.fen())}
+    const dir=color==="w"?1:-1,mine=[];mv.forEach((m,i)=>{if(m.color===color)mine.push(i)});
+    const userN=mine.length,flagged=new Set(mistakes.map(m=>m.ply)),tagged=t=>mistakes.some(m=>m.tag===t);
+    const moveNo=i=>Math.floor(i/2)+1,file=s=>s.charCodeAt(0)-97;
+    const afterN=n=>mine[n-1]===undefined?null:fens[mine[n-1]+1];
+    const ci=mv.findIndex(m=>m.color===color&&(m.flags.includes("k")||m.flags.includes("q"))),cNo=ci<0?null:moveNo(ci);
+    for(const [k,T] of [["castle8",8],["castle12",12]]){if(cNo!==null&&cNo<=T)add(k,1);else if(userN>=T)add(k,0)}
+    let f=afterN(5);
+    if(f){const b=fenBoard(f);add("center5",["d4","e4","d5","e5"].some(s=>b[s]&&b[s].t==="p"&&b[s].c===color))}
+    f=afterN(8);
+    if(f){const b=fenBoard(f);let n=0;for(const fl of "cdef")for(let r=1;r<=8;r++){const x=b[fl+r];if(x&&x.t==="p"&&x.c===color&&(color==="w"?r>=4:r<=5))n++}add("expand8",n>=2)}
+    f=afterN(15);
+    if(f){const b=fenBoard(f),ks=Object.keys(b).find(s=>b[s].t==="k"&&b[s].c===color);
+      if(ks){const back=color==="w"?1:8;
+        if(+ks[1]!==back)add("luft",1);
+        else{const fi=file(ks);add("luft",[fi-1,fi,fi+1].some(x=>x>=0&&x<8&&!b["abcdefgh"[x]+(back+dir)]))}}}
+    let gam=false,sac=false;
+    for(const i of mine){
+      const m=mv[i];
+      if(m.piece==="p"&&m.captured)add("pawnCap",Math.abs(file(m.to)-3.5)<Math.abs(file(m.from)-3.5));
+      if(m.captured){const r=mv[i+1];if(r&&r.captured&&r.to===m.to){const d=matDiff(fens[i],color);if(d>=2)add("tradeUp",1);else if(d<=-2)add("tradeUp",0)}}
+      if(moveNo(i)<=10&&!flagged.has(i)){const r=mv[i+1],n2=mv[i+2];
+        if(r&&r.captured==="p"&&n2&&!(n2.captured&&n2.to===r.to)&&matDiff(fens[i+3],color)<=matDiff(fens[i],color)-1)gam=true}
+      if(!flagged.has(i)&&!flagged.has(i+2)&&mv[i+1]&&mv[i+1].captured&&mv[i+2]&&matDiff(fens[i+3],color)-matDiff(fens[i],color)<=-2)sac=true;
+      if(i<4)continue;
+      const c=new Chess(fens[i]),ms=c.moves({verbose:true}),caps=ms.filter(x=>x.captured&&x.piece!=="k");
+      if(caps.some(x=>"nbrq".includes(x.captured)&&PVAL[x.captured]>=PVAL[x.piece]))add("trade",!!(m.captured&&"nbrq".includes(m.captured)));
+      let free=0;
+      for(const x of caps){if(!"nbrq".includes(x.captured))continue;c.move({from:x.from,to:x.to,promotion:x.promotion});
+        if(!c.moves({verbose:true}).some(y=>y.to===x.to&&y.captured))free=Math.max(free,PVAL[x.captured]);c.undo()}
+      if(free)add("free",(m.captured&&PVAL[m.captured]>=free)||m.san.endsWith("#"));
+      const pm=mv[i-1];
+      if(pm&&"nb".includes(pm.piece)&&["g4","g5","b4","b5"].includes(pm.to)){
+        const t=pm.to,tf=file(t),tr=+t[1];
+        const att=ms.filter(x=>x.piece==="p"&&(x.from[0]==="a"||x.from[0]==="h")&&Math.abs(file(x.to)-tf)===1&&tr===+x.to[1]+dir);
+        if(att.length||ms.some(x=>x.to===t&&x.piece==="p"&&x.captured))add("pinAtk",att.some(x=>x.from===m.from&&x.to===m.to)||(m.to===t&&m.piece==="p"));
+      }
+    }
+    if(userN>=3)add("gambit",!gam);
+    if(userN>=5)add("sac",!sac);
+    const term=g.headers.Termination||"";
+    if(resultFor(g.headers,color)==="L"&&term)add("resign",!/won by resignation/i.test(term));
+    const tcs=g.headers.TimeControl||"",[base,inc]=tcs.includes("/")?[0,0]:tcs.split("+").map(Number);
+    if(g.clk&&g.clk.length===mv.length&&base&&userN>=10){
+      let u=0,o=0,pu=base,po=base;
+      mv.forEach((m,i)=>{const c=g.clk[i];if(m.color===color){u+=pu-c+(inc||0);pu=c}else{o+=po-c+(inc||0);po=c}});
+      add("time",u<=o);
+    }
+    if(userN>=5){add("hang",!tagged("hung"));add("tactic",!tagged("missedTactic"));add("mate",!tagged("missedMate"))}
+    const ei=fens.findIndex(x=>pieceMaterial(x)<=26);
+    if(ei>=0&&mine.filter(j=>j>=ei).length>=3)add("king",!tagged("passiveKing"));
+    return H;
+  }catch(e){return null}
+}
+
 function resultFor(h,color){const r=h.Result;if(r==="1/2-1/2")return "D";if(r==="1-0")return color==="w"?"W":"L";if(r==="0-1")return color==="b"?"W":"L";return "D"}
 
 async function run(text,opts={}){
@@ -597,6 +742,7 @@ async function run(text,opts={}){
   const ms=parseInt($("depth").value,10);
   running=true;stopFlag=false;$("go").disabled=true;$("sample").disabled=true;$("stop").hidden=false;
   state.order=pick.map(kf);state.cur=-1;
+  for(const g of pick){const s=state.games[kf(g)];if(s&&s.mistakes&&s.habV!==HAB_V){s.hab=computeHabits(g,s.color,s.mistakes);s.habV=HAB_V;s.elo=eloOf(g,s.color);saveGame(s)}}
   const todo=pick.filter(g=>{const s=state.games[kf(g)];return !s||s.ms<ms||s.acc==null});
   renderAll();updateSaved();saveMeta();
   if(!todo.length){setMsg(`All ${pick.length} games were already analyzed and saved, so this was instant.`);$("bar").style.width="100%";finish();return}
@@ -612,7 +758,7 @@ async function run(text,opts={}){
     if(!res)break;
     state.games[key]={key,ms,color,white:g.headers.White,black:g.headers.Black,result:resultFor(g.headers,color),
       date:g.headers.UTCDate||g.headers.Date||"",tc:tcInfo(g.headers.TimeControl).label,cls:tcInfo(g.headers.TimeControl).cls,link:/^https?:/.test(g.headers.Link||"")?g.headers.Link:"",
-      t:gameTime(g),sample:!!opts.sample,...res};
+      t:gameTime(g),sample:!!opts.sample,hab:computeHabits(g,color,res.mistakes),habV:HAB_V,elo:eloOf(g,color),...res};
     saveGame(state.games[key]);updateSaved();renderAll();prog.acc=collectAccuracy();renderProgress();
   }
   setMsg(stopFlag?"Stopped. Finished games are saved.":`Done. ${state.puzzles.length} puzzles from ${state.order.filter(k=>state.games[k]).length} games.`);
@@ -641,7 +787,7 @@ function renderAll(){
   const issues=computeIssues();
   const prevId=state.puzzles[state.cur]&&state.puzzles[state.cur].id;
   state.puzzles=buildPuzzles(issues);
-  renderIssues(issues);renderGames();
+  renderIssues(issues);renderGames();renderHabits();
   if(state.puzzles.length){
     const i=prevId?state.puzzles.findIndex(p=>p.id===prevId):-1;
     if(i>=0)state.cur=i;else{const f=state.puzzles.findIndex(p=>!state.solved[p.id]);openPuzzle(f>=0?f:0)}
@@ -868,7 +1014,7 @@ $("next").onclick=()=>{const n=state.puzzles.length;if(!n)return;
 const CLASSES=[["rapid","Rapid"],["blitz","Blitz"],["bullet","Bullet"],["daily","Daily"]];
 const CLS_LABEL=Object.fromEntries(CLASSES);
 const CLS_COLOR={rapid:"var(--s1)",blitz:"var(--s2)",bullet:"var(--s3)",daily:"var(--s4)"};
-const prog={range:3,mode:"rating",hidden:{},table:false,rating:{},acc:{},note:"",cover:null};
+const prog={hband:"auto",range:3,mode:"rating",hidden:{},table:false,rating:{},acc:{},note:"",cover:null};
 const SVGNS="http://www.w3.org/2000/svg";
 function sv(tag,attrs,parent){const e=document.createElementNS(SVGNS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e}
 function mk(tag,cls,text,parent){const e=document.createElement(tag);if(cls)e.className=cls;if(text!=null)e.textContent=text;if(parent)parent.appendChild(e);return e}
@@ -1127,10 +1273,10 @@ function renderProgress(){
   if(prog.table)renderTables();else renderCharts();
   $("coverage").textContent=prog.note||coverageText();
 }
-const savePrefs=()=>dbPut("meta",{k:"prefs",range:prog.range,mode:prog.mode,hidden:prog.hidden});
+const savePrefs=()=>dbPut("meta",{k:"prefs",range:prog.range,mode:prog.mode,hidden:prog.hidden,hband:prog.hband});
 async function loadPrefs(){
   const p=await dbGet("meta","prefs");
-  if(p){prog.range=p.range||3;prog.mode=p.mode||"rating";prog.hidden=p.hidden||{};$("range").value=String(prog.range)}
+  if(p){prog.range=p.range||3;prog.mode=p.mode||"rating";prog.hidden=p.hidden||{};prog.hband=p.hband||"auto";$("hband").value=prog.hband;$("range").value=String(prog.range)}
 }
 $("range").onchange=()=>{prog.range=parseInt($("range").value,10);prog.note="";savePrefs();refreshRatings()};
 $("mrating").onclick=()=>{prog.mode="rating";savePrefs();renderProgress()};
@@ -1143,6 +1289,39 @@ if(window.ResizeObserver){
   const ro=new ResizeObserver(()=>{cancelAnimationFrame(rz);rz=requestAnimationFrame(()=>{if(!prog.table)renderCharts()})});
   ro.observe($("rhost"));ro.observe($("ahost"));
 }
+
+/* ---------- habit panel ---------- */
+function renderHabits(){
+  const box=$("hlist"),un=$("hunm-list"),how=$("hhow");box.textContent="";un.textContent="";how.textContent="";$("hunm").hidden=true;$("hsum").textContent="";
+  const games=state.order.map(k=>state.games[k]).filter(Boolean);
+  const ready=games.filter(g=>g.hab&&g.habV===HAB_V),stale=games.length-ready.length;
+  const elo=(games.find(g=>g.elo)||{}).elo,auto=prog.hband==="auto";
+  const bi=auto?(elo==null?-1:BANDS.findIndex(b=>elo<b.hi)):+prog.hband;
+  $("hnote").textContent=auto&&elo!=null&&bi>=0?`Auto: you were rated ${elo} in your latest game, so this is the ${BANDS[bi].name} list.`:"";
+  if(!games.length){mk("div","empty","Analyze some games and this will show how often you follow the habits for your rating.",box);return}
+  if(bi<0){mk("div","empty","These games don’t include your rating. Pick a level above.",box);return}
+  if(!ready.length){mk("div","empty","Fetch your games again to run the habit checks on them.",box);return}
+  const band=BANDS[bi],tot={};
+  for(const g of ready)for(const k in g.hab){const t=tot[k]||(tot[k]=[0,0]);t[0]+=g.hab[k][0];t[1]+=g.hab[k][1]}
+  const used=new Set(),unm=[];let good=0,total=0,weak=null;
+  for(const [text,keys] of band.h){
+    const ms=(keys||[]);
+    if(!ms.length){unm.push(text);continue}
+    const row=mk("div","hb",null,box);mk("div","hb-t",text,row);
+    for(const k of ms){
+      used.add(k);const M=MEASURES[k],t=tot[k]||[0,0],pct=t[1]?Math.round(t[0]/t[1]*100):null;
+      const line=mk("div","hb-m",null,row);mk("span","lab",M.l,line);
+      const val=mk("span","val",pct==null?"No chances yet":pct+"%",line);
+      if(pct!=null){mk("span","muted small",` ${t[0]} of ${t[1]} ${M.u}${t[1]<4?" · small sample":""}`,val);
+        const bar=mk("div","bar",null,line);const i=mk("i",pct>=80?"good":pct>=50?"mid":"low",null,bar);i.style.width=Math.max(pct,2)+"%";
+        total++;if(pct>=80)good++;if(t[1]>=3&&(!weak||pct<weak.pct))weak={l:M.l,pct}}
+    }
+  }
+  $("hsum").textContent=`${ready.length} game${ready.length===1?"":"s"} checked at the ${band.name} level. ${total?`You follow ${good} of ${total} measurable habits at least 80% of the time.`:""}${weak?` Weakest: ${weak.l.toLowerCase()} (${weak.pct}%).`:""}${stale?` ${stale} saved game${stale===1?"":"s"} can't be checked until you fetch again.`:""}`;
+  if(unm.length){$("hunm").hidden=false;$("hunm-sum").textContent=`Habits that can't be measured from a game record (${unm.length})`;unm.forEach(t=>mk("li",null,t,un))}
+  for(const k of used){const d=mk("div",null,null,how);mk("dt",null,MEASURES[k].l,d);mk("dd",null,MEASURES[k].d,d)}
+}
+$("hband").onchange=()=>{prog.hband=$("hband").value;savePrefs();renderHabits()};
 
 /* ---------- inputs ---------- */
 $("user").addEventListener("input",renderLinks);
@@ -1237,6 +1416,7 @@ async function start(){
   const have=state.order.filter(k=>state.games[k]).length;
   if(have){renderAll();setMsg(`Loaded ${have} saved games from your last visit. Pick a time control and fetch to refresh.`)}
   try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
+  renderHabits();
   await refreshRatings();
 }
 boot();
