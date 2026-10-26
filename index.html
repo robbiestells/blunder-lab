@@ -236,6 +236,12 @@ table.t{border-collapse:collapse;font-size:.88rem;width:100%}
 .t td.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
 .habits{display:grid;gap:20px}
 .hb{display:grid;gap:7px}
+.hb-go{justify-self:start;margin-top:2px;font-size:.78rem}
+.hb-m .hb-go{grid-column:1/-1}
+.issue .hb-go{margin-top:6px;grid-column:1/-1;justify-self:start}
+.focus{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;padding:8px 12px;border:2px dashed var(--pen);font-size:.9rem;margin-bottom:10px}
+.focus[hidden]{display:none}
+.focus button{margin-left:auto}
 .hb-t{font-weight:700;overflow-wrap:anywhere}
 .hb-m{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 14px;align-items:baseline}
 .hb-m .lab{font-size:.88rem;color:var(--muted)}
@@ -297,8 +303,15 @@ table.t{border-collapse:collapse;font-size:.88rem;width:100%}
 .tstat{display:grid;gap:6px;align-content:center;min-width:0}
 .tstat .tw{font:700 1.7rem/1 var(--f-hand);color:var(--pen)}
 .tstat .tev{font:800 1.5rem/1 var(--f-mono);font-variant-numeric:tabular-nums}
-.tstat .tline{font:500 .82rem/1.4 var(--f-mono);overflow-wrap:anywhere;color:var(--muted);min-height:2.8em}
+.tstat .tline{font:500 .82rem/1.4 var(--f-mono);overflow-wrap:anywhere;color:var(--muted);height:4.2em;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3}
+/* fixed heights so the panel never resizes as Stockfish streams new lines (stops the page jumping) */
+.tstat #tinfo{height:2.8em;line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2}
+.tstat .tev{height:1em;white-space:nowrap}
+.tstat .tw{height:2em;display:flex;align-items:flex-end;flex-wrap:wrap}
+.tdots{display:inline-block;width:1.1em;text-align:left}
 .tdots::after{content:"";animation:dots 1.2s steps(4) infinite}
+#msg{overflow-wrap:anywhere}
+.think{overflow-anchor:none}
 @keyframes dots{0%{content:""}25%{content:"."}50%{content:".."}75%{content:"..."}}
 .report.off{display:none!important}
 .rc{display:grid;grid-template-columns:auto auto minmax(0,1fr);gap:18px 30px;align-items:center;padding-top:6px}
@@ -354,15 +367,16 @@ table.t{border-collapse:collapse;font-size:.88rem;width:100%}
     <h1>Blunder<span class="nag" aria-hidden="true">??</span><span class="lab"> Lab</span></h1>
     <div class="mast-side">
       <div class="navrow"><nav class="nav" aria-label="Pages"><span class="nav-ink" id="navink" aria-hidden="true"></span><a href="#/train" data-go="train">Train</a><a href="#/progress" data-go="progress">Progress</a><a href="#/habits" data-go="habits">Habits</a><a href="#/games" data-go="games">Games</a></nav><button id="snd" class="small" type="button" aria-pressed="false">Sound off</button></div>
-      <p class="intro">Your recent chess.com games, checked by Stockfish in your browser. The biggest swings become puzzles: find the move you missed.</p>
+      <p class="intro">Your recent <span class="siteName">chess.com</span> games, checked by Stockfish in your browser. The biggest swings become puzzles: find the move you missed.</p>
     </div>
   </header>
 
   <section class="panel" id="setup" data-page="train" aria-labelledby="load-h">
-    <div class="ph"><h2 id="load-h">Load your games</h2><span class="eyebrow">chess.com · robbiestells</span></div>
+    <div class="ph"><h2 id="load-h">Load your games</h2><span class="eyebrow" id="setupEyebrow">chess.com · robbiestells</span></div>
     <div class="setup">
       <div class="setup-main">
         <div class="fields">
+          <label class="f">Site<select id="site"><option value="chesscom" selected>chess.com</option><option value="lichess">Lichess</option></select></label>
           <label class="f">Username<input type="text" id="user" value="robbiestells" autocomplete="off" spellcheck="false"></label>
           <label class="f">Time control<select id="tc"><option value="rapid" selected>Rapid</option><option value="1510">Rapid 15 | 10 only</option><option value="blitz">Blitz</option><option value="bullet">Bullet</option><option value="daily">Daily</option><option value="all">All games</option></select></label>
           <label class="f">Recent games<select id="count"><option>5</option><option selected>8</option><option>12</option><option>20</option><option>40</option></select></label>
@@ -376,7 +390,7 @@ table.t{border-collapse:collapse;font-size:.88rem;width:100%}
       </div>
       <div class="setup-side">
         <div class="progress" aria-hidden="true"><i id="bar"></i></div>
-        <div id="msg" role="status" class="muted">Pulls your newest games straight from chess.com. Everything is saved in this browser, so repeat visits are fast.</div>
+        <div id="msg" role="status" class="muted">Pulls your newest games straight from <span class="siteName">chess.com</span>. Everything is saved in this browser, so repeat visits are fast.</div>
         <div class="savedrow">
           <span class="mono muted" id="saved" aria-live="polite"></span>
           <button id="clear" class="small">Clear saved data</button>
@@ -412,6 +426,7 @@ table.t{border-collapse:collapse;font-size:.88rem;width:100%}
     <div class="left">
     <section class="panel trainer" aria-labelledby="pz-h">
       <div class="ph"><h2 id="pz-h">Puzzle</h2><span class="eyebrow" id="pzCount">0 / 0 solved</span></div>
+      <div class="focus" id="focus" hidden></div>
       <div class="tally" id="tally"></div>
       <div class="prompt">
         <div class="who" id="who">Puzzles appear here as games finish.</div>
@@ -468,7 +483,7 @@ table.t{border-collapse:collapse;font-size:.88rem;width:100%}
         </div>
         <div class="sub" id="rsub"></div>
         <div class="host" id="rhost"></div>
-        <div class="note" id="rnote">Rating going into each game, from your chess.com games. “Change” shows how far each time control has moved since the first game in the period.</div>
+        <div class="note" id="rnote">Rating going into each game, from your <span class="siteName">chess.com</span> games. “Change” shows how far each time control has moved since the first game in the period.</div>
       </div>
       <div class="chartbox">
         <h3>Accuracy</h3>
@@ -561,11 +576,12 @@ async function dbAll(s){const d=await openDb();if(!d)return [...mem[s].values()]
 async function dbClear(s){mem[s].clear();await idb(s,"readwrite",o=>o.clear())}
 const saveGame=g=>persist?dbPut("games",g):0;
 const saveSolved=id=>persist?dbPut("solved",{id,t:Date.now()}):0;
-const saveMeta=()=>persist?dbPut("meta",{k:"last",user:state.user,order:state.order,tc:$("tc").value,count:$("count").value,depth:$("depth").value}):0;
+const saveMeta=()=>persist?dbPut("meta",{k:"last",site:$("site").value,user:state.user,order:state.order,tc:$("tc").value,count:$("count").value,depth:$("depth").value}):0;
 async function load(){
   const [games,solved,last]=await Promise.all([dbAll("games"),dbAll("solved"),dbGet("meta","last")]);
   games.forEach(g=>{state.games[g.key]=g});solved.forEach(s=>{state.solved[s.id]=1});
   if(last){
+    if(last.site)$("site").value=last.site;
     if(last.user){state.user=last.user;$("user").value=last.user}
     if(last.tc)$("tc").value=last.tc;
     if(last.count)$("count").value=last.count;
@@ -583,6 +599,7 @@ function updateSaved(){
 function renderLinks(){
   const u=encodeURIComponent(($("user").value||"robbiestells").trim().toLowerCase());
   const box=$("monthLinks");box.textContent="";
+  if($("site")&&$("site").value==="lichess"){const a=document.createElement("a");a.href=`https://lichess.org/api/games/user/${u}?max=60&clocks=true`;a.target="_blank";a.rel="noopener";a.textContent="Last 60 Lichess games (PGN)";box.appendChild(a);return}
   const now=new Date();
   for(let i=0;i<3;i++){
     const d=new Date(now.getFullYear(),now.getMonth()-i,1);
@@ -620,7 +637,7 @@ function parseOne(txt){
 const FILTER_LABEL={rapid:"rapid",1510:"15 | 10",blitz:"blitz",bullet:"bullet",daily:"daily",all:"any type"};
 function tcInfo(tc){
   if(!tc)return {cls:"unknown",is1510:false,label:"?"};
-  if(tc.includes("/"))return {cls:"daily",is1510:false,label:"Daily"};
+  if(tc.includes("/")||tc==="-")return {cls:"daily",is1510:false,label:"Daily"};
   const [b,i]=tc.split("+").map(Number);const base=b||0,inc=i||0;
   const est=base+40*inc;
   const cls=est<180?"bullet":est<600?"blitz":"rapid";
@@ -844,7 +861,7 @@ function computeHabits(g,color,mistakes){
     if(userN>=3)add("gambit",!gam);
     if(userN>=5)add("sac",!sac);
     const term=g.headers.Termination||"";
-    if(resultFor(g.headers,color)==="L"&&term)add("resign",!/won by resignation/i.test(term));
+    if(resultFor(g.headers,color)==="L"&&term&&!/lichess\.org/.test(g.headers.Site||""))add("resign",!/won by resignation/i.test(term));
     const tcs=g.headers.TimeControl||"",[base,inc]=tcs.includes("/")?[0,0]:tcs.split("+").map(Number);
     if(g.clk&&g.clk.length===mv.length&&base&&userN>=10){
       let u=0,o=0,pu=base,po=base;
@@ -873,7 +890,7 @@ function resultFor(h,color){const r=h.Result;if(r==="1/2-1/2")return "D";if(r===
 
 async function run(text,opts={}){
   if(running)return;
-  const user=($("user").value||"").trim();if(!user){setMsg("Enter your chess.com username first.",true);return}
+  const user=($("user").value||"").trim();if(!user){setMsg(`Enter your ${siteName()} username first.`,true);return}
   const filter=opts.filter||$("tc").value;persist=opts.persist!==false;
   state.user=user;renderLinks();
   const all=splitPgn(text);
@@ -911,7 +928,7 @@ async function run(text,opts={}){
     const res=await analyzeGame(g,color,ms,p=>{setMsg(`${label} · vs ${color==="w"?g.headers.Black:g.headers.White}`);$("bar").style.width=Math.round(((k-1+p)/todo.length)*100)+"%"});
     if(!res)break;
     state.games[key]={key,ms,color,white:g.headers.White,black:g.headers.Black,result:resultFor(g.headers,color),
-      date:g.headers.UTCDate||g.headers.Date||"",tc:tcInfo(g.headers.TimeControl).label,cls:tcInfo(g.headers.TimeControl).cls,link:/^https?:/.test(g.headers.Link||"")?g.headers.Link:"",
+      date:g.headers.UTCDate||g.headers.Date||"",tc:tcInfo(g.headers.TimeControl).label,cls:tcInfo(g.headers.TimeControl).cls,link:/^https?:/.test(g.headers.Link||"")?g.headers.Link:/^https:\/\/lichess\.org\//.test(g.headers.Site||"")?g.headers.Site:"",
       t:gameTime(g),sample:!!opts.sample,hab:computeHabits(g,color,res.mistakes),habV:HAB_V,elo:eloOf(g,color),...res};
     saveGame(state.games[key]);updateSaved();renderAll();prog.acc=collectAccuracy();renderProgress();
   }
@@ -940,7 +957,9 @@ function buildPuzzles(issues){
 function renderAll(){
   const issues=computeIssues();
   const prevId=state.puzzles[state.cur]&&state.puzzles[state.cur].id;
-  state.puzzles=buildPuzzles(issues);
+  if(state.focus&&!focusPuzzles(state.focus).length)state.focus=null;
+  state.puzzles=state.focus?focusPuzzles(state.focus):buildPuzzles(issues);
+  renderFocus();
   renderIssues(issues);renderGames();renderHabits();
   if(state.puzzles.length){
     const i=prevId?state.puzzles.findIndex(p=>p.id===prevId):-1;
@@ -954,8 +973,9 @@ function renderIssues(issues){
   const max=issues[0].loss;
   issues.forEach((x,i)=>{
     const d=document.createElement("div");d.className="issue";
-    const T=TAGS[x.t];
-    d.innerHTML=`<strong>${T.label}</strong><span class="mono muted">${x.n}× · −${Math.round(x.loss)}%</span><div class="bar"><i style="width:${Math.max(6,x.loss/max*100)}%;--d:${(i*.08).toFixed(2)}s"></i></div>${i<3?`<p>${T.tip}</p>`:""}`;
+    const T=TAGS[x.t],on=state.focus&&state.focus.kind==="tag"&&state.focus.t===x.t;
+    d.innerHTML=`<strong>${T.label}</strong><span class="mono muted">${x.n}× · −${Math.round(x.loss)}%</span><div class="bar"><i style="width:${Math.max(6,x.loss/max*100)}%;--d:${(i*.08).toFixed(2)}s"></i></div>${i<3?`<p>${T.tip}</p>`:""}<button type="button" class="small hb-go"${on?' aria-pressed="true"':""}>${on?"Practicing these":`Practice ${x.n} puzzle${x.n===1?"":"s"} →`}</button>`;
+    d.querySelector("button").onclick=()=>setFocus(on?null:{kind:"tag",t:x.t});
     box.appendChild(d);
   });
 }
@@ -975,7 +995,7 @@ function renderGames(){
     const meta=mk("div","g-meta",null,d);
     if(g.acc!=null){mk("b","acc",Math.round(g.acc)+"%",meta);meta.append(" accuracy · ")}
     meta.append(`${g.mistakes.length} costly move${g.mistakes.length===1?"":"s"} of ${g.userMoves}`);
-    if(g.link){meta.append(" · ");const a=mk("a",null,"chess.com ↗",meta);a.href=g.link;a.target="_blank";a.rel="noopener"}
+    if(g.link){meta.append(" · ");const a=mk("a",null,(/lichess\.org/.test(g.link)?"Lichess":"chess.com")+" ↗",meta);a.href=g.link;a.target="_blank";a.rel="noopener"}
     const pzBox=mk("div","pz",null,d);
     const pz=state.puzzles.map((p,i)=>({p,i})).filter(x=>x.p.game===g.key);
     if(!pz.length)mk("span","muted small","No puzzle: nothing dropped more than 10%.",pzBox);
@@ -1351,6 +1371,7 @@ function hdr(pgn,k){const m=pgn.match(new RegExp("\\["+k+' "([^"]*)"\\]'));retur
 function pgnTime(pgn){const d=hdr(pgn,"UTCDate")||hdr(pgn,"Date"),t=hdr(pgn,"UTCTime")||"00:00:00";const ms=Date.parse(d.replace(/\./g,"-")+"T"+t+"Z");return isNaN(ms)?0:ms}
 
 async function collectRatings(){
+  if(site()==="lichess"){const r=await lichessRatingTracks();prog.cover=r.cover;return r.out}
   const lu=curUser(),tag="/player/"+encodeURIComponent(lu)+"/",from=rangeStart(),out={};
   let first=null,last=null,n=0;
   for(const mo of await dbAll("months")){
@@ -1386,8 +1407,11 @@ async function refreshRatings(){
   renderProgress();
 }
 async function loadHistory(){
-  const user=($("user").value||"").trim();if(!user){prog.note="Enter your chess.com username first.";renderProgress();return}
+  const user=($("user").value||"").trim();if(!user){prog.note=`Enter your ${siteName()} username first.`;renderProgress();return}
   const btn=$("loadhist");btn.disabled=true;prog.note="";
+  if(site()==="lichess"){try{$("coverage").textContent="Loading Lichess rating history…";await loadLichessRatings(user)}
+    catch(e){prog.note=e.message==="NOTFOUND"?`Lichess has no player named “${user}”.`:"Couldn't reach Lichess. Try again in a moment."}
+    btn.disabled=false;await refreshRatings();return}
   try{
     const base="https://api.chess.com/pub/player/"+encodeURIComponent(user.toLowerCase());
     const {archives}=await getJson(base+"/games/archives");
@@ -1733,6 +1757,28 @@ function showSession(){
 
 /* ---------- per-game habit checklist ---------- */
 const TAG_HAB={hung:"hang",missedTactic:"tactic",missedMate:"mate",passiveKing:"king"};
+/* ---------- practice by habit or issue ----------
+   Direct habits map to a mistake type and pull every puzzle of that type. The rest pull the related
+   mistakes from games where the habit was broken (or that game's worst moment if none match). */
+const HAB_DIRECT={hang:["hung"],tactic:["missedTactic"],mate:["missedMate"],king:["passiveKing"]};
+const HAB_REL={free:["missedTactic","hung"],trade:["missedTactic","hung"],tradeUp:["hung","quiet","endgame"],center5:["opening"],expand8:["opening"],castle8:["opening","allowedMate"],castle12:["opening","allowedMate"],
+  luft:["allowedMate","hung"],pinAtk:["opening","quiet","hung"],gambit:["opening","hung"],sac:["hung","quiet"],pawnCap:["quiet","opening"]};
+function focusPuzzles(f){const out=[];if(!f)return out;
+  for(const k of state.order){const g=state.games[k];if(!g||!g.mistakes)continue;let ms=[];
+    if(f.kind==="tag")ms=g.mistakes.filter(m=>m.tag===f.t);
+    else if(HAB_DIRECT[f.k])ms=g.mistakes.filter(m=>HAB_DIRECT[f.k].includes(m.tag));
+    else{const r=g.hab&&g.habV===HAB_V&&g.hab[f.k];
+      if(r&&r[0]<r[1]&&g.mistakes.length){const rel=HAB_REL[f.k];ms=rel?g.mistakes.filter(m=>rel.includes(m.tag)):[];
+        if(!ms.length)ms=[g.mistakes.slice().sort((a,b)=>b.drop-a.drop)[0]]}}
+    ms.forEach(m=>out.push({...m,game:k,color:g.color,id:k+"#"+m.ply}))}
+  return out.sort((a,b)=>b.drop-a.drop)}
+function focusLabel(f){return f.kind==="tag"?TAGS[f.t].label:MEASURES[f.k].l}
+function setFocus(f){state.focus=f;renderAll();go("train");
+  setTimeout(()=>{const el=$("puzzles");if(el)el.scrollIntoView({behavior:motion()?"smooth":"auto",block:"start"})},90);
+  if(f)setMsg(`Practicing ${focusLabel(f).toLowerCase()}: ${state.puzzles.length} puzzle${state.puzzles.length===1?"":"s"}.`)}
+function renderFocus(){const el=$("focus");if(!el)return;const f=state.focus;el.hidden=!f;if(!f)return;el.textContent="";
+  mk("span",null,"Practicing ",el);mk("b",null,focusLabel(f),el);mk("span","muted",` · ${state.puzzles.length} puzzle${state.puzzles.length===1?"":"s"}`,el);
+  const b=mk("button","small","Show all puzzles",el);b.type="button";b.onclick=()=>{state.focus=null;renderAll()}}
 function bandFor(g){return prog.hband!=="auto"?+prog.hband:(g.elo==null?-1:BANDS.findIndex(b=>g.elo<b.hi))}
 function gameHabits(g,host,cur){
   host.textContent="";
@@ -1817,6 +1863,8 @@ function renderHabits(){
         const bar=mk("div","bar",null,line);const i=mk("i",pct>=80?"good":pct>=50?"mid":"low",null,bar);i.style.width=Math.max(pct,2)+"%";
         if(pct>=80){const st=mk("span","star","★",val);st.setAttribute("role","img");st.setAttribute("aria-label","Followed at least 80% of the time")}
         const dl=deltaFor(k);if(dl!=null&&Math.abs(dl)>=10){const d=mk("span","delta "+(dl>0?"up":"down"),(dl>0?"↑ +":"↓ −")+Math.abs(dl)+"%",val);d.title="Recent games compared with your older ones"}
+        const np=focusPuzzles({kind:"habit",k}).length;
+        if(np){const b=mk("button","small hb-go",`Practice ${np} puzzle${np===1?"":"s"} →`,line);b.type="button";b.title="Puzzles from the moments this habit slipped";b.onclick=()=>setFocus({kind:"habit",k})}
         total++;if(pct>=80)good++;if(t[1]>=3&&(!weak||pct<weak.pct))weak={l:M.l,pct}}
     }
   }
@@ -1849,7 +1897,44 @@ async function loadMonth(url){
   await dbPut("months",{url,final:isFinalMonth(url),games:slim,t:Date.now()});
   return slim;
 }
+/* ---------- Lichess ----------
+   Lichess's public API allows cross-site requests, so games come straight from lichess.org as PGN
+   (with clock times for the time-use habit). Rating history comes from its rating-history endpoint. */
+const site=()=>$("site").value==="lichess"?"lichess":"chesscom";
+const SITE_NAME={chesscom:"chess.com",lichess:"Lichess"};
+const siteName=()=>SITE_NAME[site()];
+function applySite(){document.querySelectorAll(".siteName").forEach(e=>e.textContent=siteName());
+  $("setupEyebrow").textContent=`${siteName()} · ${($("user").value||"").trim()||"username"}`;renderLinks()}
+const LI_PERF={rapid:"rapid,classical",1510:"rapid",blitz:"blitz",bullet:"bullet,ultraBullet",daily:"correspondence",all:"ultraBullet,bullet,blitz,rapid,classical,correspondence"};
+async function fetchLichessPgn(user,n,filter){
+  const max=Math.min(300,filter==="1510"?n*8:n);
+  const url=`https://lichess.org/api/games/user/${encodeURIComponent(user)}?max=${max}&perfType=${LI_PERF[filter]||LI_PERF.all}&clocks=true&evals=false&opening=false&literate=false`;
+  setMsg("Loading games from Lichess…");
+  const r=await fetch(url,{headers:{Accept:"application/x-chess-pgn"}});
+  if(r.status===404)throw new Error("NOTFOUND");
+  if(r.status===429)throw new Error("RATE");
+  if(!r.ok)throw new Error("HTTP "+r.status);
+  let text=await r.text();
+  if(filter==="1510")text=splitRaw(text).filter(t=>/\[TimeControl "900\+10"\]/.test(t)).slice(0,n).join("\n\n");
+  if(!text.trim())throw new Error("NOGAMES");
+  return text}
+function splitRaw(text){return text.replace(/\r/g,"").split(/\n\n(?=\[Event )/)}
+async function loadLichessRatings(user){
+  const r=await fetch(`https://lichess.org/api/user/${encodeURIComponent(user)}/rating-history`);
+  if(r.status===404)throw new Error("NOTFOUND");if(!r.ok)throw new Error("HTTP "+r.status);
+  const data=await r.json();await dbPut("meta",{k:"lichess|"+user.toLowerCase(),data,t:Date.now()});return data}
+const LI_CLS={Bullet:"bullet",UltraBullet:"bullet",Blitz:"blitz",Rapid:"rapid",Classical:"rapid",Correspondence:"daily"};
+async function lichessRatingTracks(){
+  const rec=await dbGet("meta","lichess|"+curUser());if(!rec||!Array.isArray(rec.data))return {out:{},cover:null};
+  const from=rangeStart(),out={};let first=null,last=null;
+  for(const perf of rec.data){const cls=LI_CLS[perf.name];if(!cls||!Array.isArray(perf.points))continue;
+    for(const [y,m,d,v] of perf.points){const t=Date.UTC(y,m,d);const key=y*100+m+1;if(first===null||key<first)first=key;if(last===null||key>last)last=key;
+      if(t>=from&&v)(out[cls]=out[cls]||[]).push({t,v})}}
+  for(const c in out)out[c].sort((a,b)=>a.t-b.t);
+  return {out,cover:first?{first,last,n:1}:null}}
+
 async function fetchPgn(user,n,filter){
+  if(site()==="lichess")return fetchLichessPgn(user,n,filter);
   const base="https://api.chess.com/pub/player/"+encodeURIComponent(user.toLowerCase());
   const {archives}=await getJson(base+"/games/archives");
   if(!archives||!archives.length)throw new Error("NOGAMES");
@@ -1865,15 +1950,16 @@ async function fetchPgn(user,n,filter){
 }
 $("go").onclick=async()=>{
   if(running)return;
-  const user=($("user").value||"").trim();if(!user){setMsg("Enter your chess.com username first.",true);return}
+  const user=($("user").value||"").trim();if(!user){setMsg(`Enter your ${siteName()} username first.`,true);return}
   $("go").disabled=true;
   let text;
   try{text=await fetchPgn(user,parseInt($("count").value,10),$("tc").value)}
   catch(e){
     $("go").disabled=false;
-    if(e.message==="NOTFOUND")setMsg(`chess.com has no player named “${user}”.`,true);
-    else if(e.message==="NOGAMES")setMsg("That account has no games yet.",true);
-    else setMsg("Couldn't reach chess.com from this page. Open “Fetch didn't work?” below and use a PGN file.",true);
+    if(e.message==="NOTFOUND")setMsg(`${siteName()} has no player named “${user}”.`,true);
+    else if(e.message==="NOGAMES")setMsg(site()==="lichess"?"No Lichess games found for that account and time control.":"That account has no games yet.",true);
+    else if(e.message==="RATE")setMsg("Lichess asked us to slow down. Wait a minute, then fetch again.",true);
+    else setMsg(`Couldn't reach ${siteName()} from this page. Open “Fetch didn't work?” below and use a PGN file.`,true);
     return;
   }
   if(!text){$("go").disabled=false;setMsg("No recent games found for that account and time control.",true);return}
@@ -1915,7 +2001,9 @@ function boot(){
   start();
 }
 async function start(){
-  await load();await loadPrefs();renderLinks();drawBoard();
+  await load();await loadPrefs();applySite();drawBoard();
+  $("site").addEventListener("change",async()=>{applySite();saveMeta();await refreshRatings()});
+  $("user").addEventListener("change",()=>applySite());
   const have=state.order.filter(k=>state.games[k]).length;
   if(have){renderAll();setMsg(`Loaded ${have} saved games from your last visit. Pick a time control and fetch to refresh.`)}
   try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
