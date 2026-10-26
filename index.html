@@ -67,8 +67,8 @@ button:focus-visible,.btn:focus-visible,input:focus-visible,select:focus-visible
 #msg.err{color:var(--bad)}
 /* board */
 .trainer{display:grid;gap:14px}
-.board{display:grid;grid-template-columns:repeat(8,1fr);width:100%;max-width:520px;aspect-ratio:1;border-radius:4px;overflow:hidden;border:2px solid var(--ink);user-select:none;-webkit-user-select:none;margin:0 auto}
-.sq{position:relative;border:0;padding:0;border-radius:0;display:flex;align-items:center;justify-content:center;font:clamp(26px,9.5vw,54px)/1 var(--f-piece);background:var(--sq-light);color:#000;cursor:pointer;min-width:0}
+.board{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));grid-template-rows:repeat(8,minmax(0,1fr));width:100%;max-width:520px;aspect-ratio:1;border-radius:4px;overflow:hidden;border:2px solid var(--ink);user-select:none;-webkit-user-select:none;margin:0 auto}
+.sq{position:relative;border:0;padding:0;border-radius:0;display:flex;align-items:center;justify-content:center;font:clamp(26px,9.5vw,54px)/1 var(--f-piece);background:var(--sq-light);color:#000;cursor:pointer;min-width:0;min-height:0;overflow:hidden}
 .sq.d{background:var(--sq-dark)}
 .sq.last::after,.sq.sel::after,.sq.hint::after{content:"";position:absolute;inset:0;pointer-events:none}
 .sq.last::after{background:var(--hl)}
@@ -83,6 +83,10 @@ button:focus-visible,.btn:focus-visible,input:focus-visible,select:focus-visible
 .prompt .who{font:600 1.15rem var(--f-display)}
 .feedback{min-height:1.5em;font-weight:700}
 .feedback.ok{color:var(--good)}.feedback.no{color:var(--bad)}.feedback.info{color:var(--muted);font-weight:400}
+.why{display:grid;gap:8px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:12px 14px}
+.why strong{font:600 1rem var(--f-display)}
+.why p{margin:0;font-size:.95rem;max-width:64ch}
+.why .fine{color:var(--muted);font-size:.82rem}
 .line{font:13px/1.5 var(--f-mono);color:var(--muted);overflow-wrap:anywhere}
 .chip{display:inline-flex;align-items:center;gap:6px;font:600 .78rem var(--f-body);padding:3px 9px;border-radius:999px;border:1px solid var(--line);background:var(--bg);white-space:nowrap}
 .chip b{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
@@ -225,6 +229,7 @@ table.t{border-collapse:collapse;font-size:.85rem;width:100%}
       <div class="board" id="board" role="grid" aria-label="Chess board"></div>
       <div class="feedback info" id="fb"></div>
       <div class="line" id="pv"></div>
+      <div class="why" id="why" hidden></div>
       <div class="row">
         <button id="hint" disabled>Hint</button>
         <button id="reveal" disabled>Show answer</button>
@@ -422,6 +427,7 @@ const Engine={w:null,ready:null,queue:[],busy:false,cur:null,
 };
 
 /* ---------- scoring ---------- */
+const relMate=(ev,color)=>ev.mate===null||ev.mate===0?null:(color==="w"?ev.mate:-ev.mate);
 const moveAcc=d=>Math.max(0,Math.min(100,103.1668*Math.exp(-0.04354*d)-3.1669));
 const wp=cp=>50+50*(2/(1+Math.exp(-0.00368208*cp))-1);
 // convert engine output (side-to-move perspective) into a White-perspective record
@@ -475,7 +481,7 @@ async function analyzeGame(g,color,ms,onProg){
     else if(i<20)tag="opening";
     else tag="quiet";
     mistakes.push({ply:i,fen:fens[i],moveNo:Math.floor(i/2)+1,played,playedSan:m.san,best:evB.best,bestSan:bm?bm.san:evB.best,
-      pv:pvSan(fens[i],evB.pv,6),pvUci:evB.pv.slice(0,6),before:Math.round(before),after:Math.round(after),drop:Math.round(drop),tag});
+      pv:pvSan(fens[i],evB.pv,6),pvUci:evB.pv.slice(0,6),before:Math.round(before),after:Math.round(after),drop:Math.round(drop),tag,refut:(evA.pv||[]).slice(0,4),mateB:relMate(evB,color),mateA:relMate(evA,color)});
   });
   const userMoves=moves.filter((m,i)=>m.color===color&&i>=2).length;
   return {mistakes,userMoves,plies:moves.length,acc:accN?Math.round(accSum/accN*10)/10:null,accMoves:accN};
@@ -582,13 +588,86 @@ function renderGames(){
   }
 }
 
+/* ---------- plain-text explanations ---------- */
+const PIECE={p:"pawn",n:"knight",b:"bishop",r:"rook",q:"queen",k:"king"};
+const PVAL={p:1,n:3,b:3,r:5,q:9,k:0};
+const TIPS={
+  allowedMate:"Before you move, check every check your opponent has.",
+  missedMate:"When the enemy king is exposed, look at every check before anything else.",
+  passiveKing:"With few pieces left the king is a fighting piece. Bring it toward the center and the pawns early.",
+  hung:"Before you move, ask what the move leaves undefended.",
+  missedTactic:"Before each move, scan for checks, captures and threats, for both sides.",
+  endgame:"With few pieces left, calculate pawn races and king routes move by move.",
+  opening:"Early on, develop your pieces and castle before grabbing pawns or moving the queen again.",
+  quiet:"This one is positional. Find your worst-placed piece and improve it."
+};
+function playLine(fen,ucis){const c=new Chess(fen),out=[];for(const u of ucis){const m=uciMove(c,u);if(!m)break;out.push(m)}return out}
+function netMaterial(line,color){
+  let n=0;
+  line.forEach(m=>{const sgn=m.color===color?1:-1;if(m.captured)n+=sgn*PVAL[m.captured];if(m.promotion)n+=sgn*(PVAL[m.promotion]-1)});
+  return n;
+}
+function describeMove(m,p){
+  const mate=/#$/.test(m.san),check=/[+#]$/.test(m.san);
+  let main;
+  if(m.flags.includes("k")||m.flags.includes("q"))main="castles, tucking your king away";
+  else if(m.captured)main=`captures the ${PIECE[m.captured]} on ${m.to}`;
+  else if(m.promotion)main=`promotes the pawn to a ${PIECE[m.promotion]}`;
+  else if(m.piece==="k")main=(p.tag==="passiveKing"||p.tag==="endgame")?"activates your king":`moves the king to ${m.to}`;
+  else if((m.piece==="n"||m.piece==="b")&&p.moveNo<=12&&m.from[1]===(m.color==="w"?"1":"8"))main=`develops the ${PIECE[m.piece]}`;
+  else main=`moves the ${PIECE[m.piece]} to ${m.to}`;
+  if(mate)main+=" and delivers checkmate";
+  else if(check)main+=" with check";
+  return main;
+}
+const matText=n=>n>0?`${n} point${n===1?"":"s"} ahead in material`:n<0?`${-n} point${n===-1?"":"s"} behind in material`:"level in material";
+function explain(p){
+  const bestLine=playLine(p.fen,p.pvUci&&p.pvUci.length?p.pvUci:[p.best]);
+  const bm=bestLine[0];if(!bm)return [];
+  const after=new Chess(p.fen),pm=uciMove(after,p.played);
+  const refutLine=pm&&p.refut&&p.refut.length?playLine(after.fen(),p.refut):[];
+  const playedLine=pm?[pm,...refutLine]:[];
+  const playedSan=pm?pm.san:p.playedSan,rp=refutLine[0];
+  let a=`The best move, ${bm.san}, ${describeMove(bm,p)}.`;
+  if(p.mateB!=null&&p.mateB>0)a+=` It forces checkmate in ${p.mateB} move${p.mateB===1?"":"s"}.`;
+  a+=` In the game you played ${playedSan}`;
+  if(p.mateB!=null&&p.mateB>0&&!(p.mateA!=null&&p.mateA>0))a+=", which lets the checkmate slip away.";
+  else if(p.mateA!=null&&p.mateA<0)a+=`, which allows your opponent to force checkmate${rp?`, starting with ${rp.san}`:""}.`;
+  else if(rp&&rp.captured&&PVAL[rp.captured]>=3)a+=`, and your opponent could answer ${rp.san}, winning your ${PIECE[rp.captured]}.`;
+  else if(rp&&rp.captured)a+=`, and your opponent could answer ${rp.san}, winning a pawn.`;
+  else if(rp)a+=`, and Stockfish's best reply for your opponent is ${rp.san}.`;
+  else a+=", which gives your opponent the better game.";
+  const out=[a];
+  const parts=[];
+  const mateInvolved=(p.mateB!=null&&p.mateB>0)||(p.mateA!=null&&p.mateA<0);
+  let n=Math.min(bestLine.length,playedLine.length);if(n%2)n--;   // end on the opponent's reply so recaptures count
+  let usedPoints=false;
+  if(!mateInvolved&&refutLine.length&&n>=2){
+    const nb=netMaterial(bestLine.slice(0,n),p.color),np=netMaterial(playedLine.slice(0,n),p.color);
+    if(nb>np){parts.push(`Over the next few moves, the best line leaves you ${matText(nb)}, while ${playedSan} leaves you ${matText(np)}.`);usedPoints=true}
+  }
+  parts.push(`Stockfish rates your chances at about ${p.before}% with ${bm.san} and ${p.after}% after ${playedSan}.`);
+  out.push(parts.join(" "));
+  const tip=TIPS[p.tag];
+  if(tip)out.push(tip+(usedPoints?"  Points: pawn 1, knight and bishop 3, rook 5, queen 9.":""));
+  return out;
+}
+function showWhy(p){
+  const box=$("why");box.textContent="";
+  let paras=[];try{paras=explain(p)}catch(e){paras=[]}
+  if(!paras.length){box.hidden=true;return}
+  mk("strong",null,"Why this is better",box);
+  paras.forEach((t,i)=>mk("p",i===2?"fine":null,t,box));
+  box.hidden=false;
+}
+
 /* ---------- trainer ---------- */
 let pzGame=null,sel=null,hintSq=null,lastMv=null,orient="w",locked=false,solvedNow=false;
 function clearTrainer(){
   pzGame=null;state.cur=-1;
   $("who").textContent="Puzzles appear here as games finish.";
   $("ctx").textContent="Each game gives you its 1–2 worst moments. Your job is to find the move Stockfish wanted.";
-  $("fb").className="feedback info";$("fb").textContent="";$("pv").textContent="";
+  $("fb").className="feedback info";$("fb").textContent="";$("pv").textContent="";$("why").hidden=true;
   ["hint","reveal","retry","next"].forEach(id=>{$(id).disabled=true});
   drawBoard();
 }
@@ -601,7 +680,7 @@ function openPuzzle(i){
   // show previous opponent move as highlight
   lastMv=null;
   const fb=$("fb");fb.className="feedback info";fb.textContent=`Win chance ${p.before}% here. Your game move dropped it to ${p.after}%.`;
-  $("pv").textContent="";
+  $("pv").textContent="";$("why").hidden=true;
   ["hint","reveal","retry"].forEach(id=>$(id).disabled=false);
   $("next").disabled=state.puzzles.length<2;
   drawBoard();renderGames();
@@ -666,6 +745,7 @@ function solved(p,exact){
   $("hint").disabled=true;$("reveal").disabled=true;
 }
 function showLine(p,playReply){
+  showWhy(p);
   $("pv").textContent=`In the game you played ${p.playedSan}. Best line: ${numbered(p)}`;
   if(playReply&&p.pvUci[1]){setTimeout(()=>{if(state.puzzles[state.cur]!==p)return;const m=uciMove(pzGame,p.pvUci[1]);if(m){lastMv={from:m.from,to:m.to};drawBoard()}},650)}
 }
