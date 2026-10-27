@@ -405,7 +405,6 @@ table.t{border-collapse:collapse;font-size:.88rem;width:100%}
     <details>
       <summary>Fetch didn't work? Use a PGN file instead</summary>
       <div style="display:grid;gap:10px">
-        <div class="links" id="monthLinks"></div>
         <input type="file" id="file" accept=".pgn,.txt,text/plain,application/x-chess-pgn" multiple>
         <textarea id="paste" placeholder="Or paste PGN text here"></textarea>
         <div><button id="goFile">Analyze this PGN</button></div>
@@ -596,7 +595,8 @@ function updateSaved(){
 }
 
 /* ---------- month links ---------- */
-function renderLinks(){
+function renderLinks(){return}
+function renderLinksOld(){
   const u=encodeURIComponent(($("user").value||"robbiestells").trim().toLowerCase());
   const box=$("monthLinks");box.textContent="";
   if($("site")&&$("site").value==="lichess"){const a=document.createElement("a");a.href=`https://lichess.org/api/games/user/${u}?max=60&clocks=true`;a.target="_blank";a.rel="noopener";a.textContent="Last 60 Lichess games (PGN)";box.appendChild(a);return}
@@ -643,7 +643,7 @@ function tcInfo(tc){
   const cls=est<180?"bullet":est<600?"blitz":"rapid";
   return {cls,is1510:base===900&&inc===10,label:`${Math.round(base/60)}|${inc}`};
 }
-function isStandard(g){const h=g.headers;return !(h.Variant&&!/^chess$/i.test(h.Variant))&&h.SetUp!=="1"}
+function isStandard(g){const h=g.headers;return !(h.Variant&&!/^(chess|standard)$/i.test(h.Variant.trim()))&&h.SetUp!=="1"}
 function gameKey(g){return g.headers.Link||g.headers.Site+"|"+(g.headers.UTCDate||g.headers.Date)+"|"+(g.headers.UTCTime||"")+"|"+g.headers.White+"|"+g.headers.Black}
 function gameTime(g){const d=(g.headers.UTCDate||g.headers.Date||"0000.00.00").replace(/\./g,"-"),t=g.headers.UTCTime||g.headers.EndTime||"00:00:00";const ms=Date.parse(d+"T"+t+"Z");return isNaN(ms)?0:ms}
 
@@ -1964,7 +1964,7 @@ $("go").onclick=async()=>{
   }
   if(!text){$("go").disabled=false;setMsg("No recent games found for that account and time control.",true);return}
   refreshRatings();
-  run(text);
+  try{await run(text)}finally{if(!running){$("go").disabled=false;$("sample").disabled=false}}
 };
 $("goFile").onclick=async()=>{
   let text=$("paste").value.trim();
