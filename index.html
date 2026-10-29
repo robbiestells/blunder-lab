@@ -366,12 +366,12 @@ table.t{border-collapse:collapse;font-size:.88rem;width:100%}
   <header class="mast">
     <h1>Blunder<span class="nag" aria-hidden="true">??</span><span class="lab"> Lab</span></h1>
     <div class="mast-side">
-      <div class="navrow"><nav class="nav" aria-label="Pages"><span class="nav-ink" id="navink" aria-hidden="true"></span><a href="#/train" data-go="train">Train</a><a href="#/progress" data-go="progress">Progress</a><a href="#/habits" data-go="habits">Habits</a><a href="#/games" data-go="games">Games</a></nav><button id="snd" class="small" type="button" aria-pressed="false">Sound off</button></div>
-      <p class="intro">Your recent <span class="siteName">chess.com</span> games, checked by Stockfish in your browser. The biggest swings become puzzles: find the move you missed.</p>
+      <div class="navrow"><nav class="nav" aria-label="Pages"><span class="nav-ink" id="navink" aria-hidden="true"></span><a href="#/report" data-go="report">Report</a><a href="#/train" data-go="train">Train</a><a href="#/progress" data-go="progress">Progress</a><a href="#/habits" data-go="habits">Habits</a><a href="#/games" data-go="games">Games</a></nav><button id="snd" class="small" type="button" aria-pressed="false">Sound off</button></div>
+      <p class="intro">Your recent games from chess.com or Lichess, checked by Stockfish in your browser. The biggest swings become puzzles: find the move you missed.</p>
     </div>
   </header>
 
-  <section class="panel" id="setup" data-page="train" aria-labelledby="load-h">
+  <section class="panel" id="setup" data-page="report" aria-labelledby="load-h">
     <div class="ph"><h2 id="load-h">Load your games</h2><span class="eyebrow" id="setupEyebrow">chess.com · robbiestells</span></div>
     <div class="setup">
       <div class="setup-main">
@@ -412,7 +412,7 @@ table.t{border-collapse:collapse;font-size:.88rem;width:100%}
     </details>
   </section>
 
-  <section class="panel report off" id="report" data-page="train" aria-labelledby="rc-h">
+  <section class="panel report off" id="report" data-page="report" aria-labelledby="rc-h">
     <div class="ph"><h2 id="rc-h">Report card</h2><span class="eyebrow" id="rc-sub"></span></div>
     <div class="rc">
       <div class="rc-num"><b id="rc-acc">0</b><span>%</span><small>average accuracy</small></div>
@@ -456,15 +456,16 @@ table.t{border-collapse:collapse;font-size:.88rem;width:100%}
 
     <div class="side">
       <section class="panel" aria-labelledby="gh-h">
-        <div class="ph"><h2 id="gh-h">Habits in this game</h2><span class="eyebrow" id="gh-lvl"></span></div>
+        <div class="ph"><h2 id="gh-h">Chessbrah's Habits</h2><span class="eyebrow" id="gh-lvl"></span></div>
         <div id="gh"><div class="empty">Open a puzzle to see which habits you followed in that game.</div></div>
-      </section>
-      <section class="panel" aria-labelledby="is-h">
-        <div class="ph"><h2 id="is-h">Common issues</h2><span class="eyebrow">by win chance lost</span></div>
-        <div class="issues" id="issues"><div class="empty">Once games are analyzed, mistakes are grouped by type here so you can see which habit costs you the most.</div></div>
       </section>
     </div>
   </div>
+
+  <section class="panel" data-page="report" aria-labelledby="is-h">
+    <div class="ph"><h2 id="is-h">Common issues</h2><span class="eyebrow">by win chance lost</span></div>
+    <div class="issues" id="issues"><div class="empty">Once games are analyzed, mistakes are grouped by type here so you can see which habit costs you the most.</div></div>
+  </section>
 
   <section class="panel" id="progress" data-page="progress" aria-labelledby="pr-h">
     <div class="ph"><h2 id="pr-h">Progress</h2><button id="tabletoggle" class="small" aria-pressed="false">Table view</button></div>
@@ -1810,9 +1811,9 @@ function showGameHabits(p){
 }
 
 /* ---------- pages ---------- */
-const PAGES=["train","progress","habits","games"],PAGE_TITLE={train:"Train",progress:"Progress",habits:"Habit check",games:"Games"};
+const PAGES=["report","train","progress","habits","games"],PAGE_TITLE={report:"Report",train:"Train",progress:"Progress",habits:"Habit check",games:"Games"};
 function route(){
-  let h=(location.hash||"").replace(/^#\/?/,"");if(!PAGES.includes(h))h="train";
+  let h=(location.hash||"").replace(/^#\/?/,"");if(!PAGES.includes(h))h="report";
   document.querySelectorAll("[data-page]").forEach(e=>{e.hidden=e.dataset.page!==h});
   document.querySelectorAll(".nav a").forEach(a=>{if(a.dataset.go===h)a.setAttribute("aria-current","page");else a.removeAttribute("aria-current")});
   document.title=PAGE_TITLE[h]+" · Blunder Lab";
