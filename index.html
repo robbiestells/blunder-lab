@@ -234,6 +234,16 @@ table.t{border-collapse:collapse;font-size:.88rem;width:100%}
 .t th,.t td{text-align:left;padding:7px 14px 7px 0;border-top:1px solid var(--line);white-space:nowrap}
 .t th{font:500 .72rem var(--f-mono);color:var(--muted);letter-spacing:.1em;text-transform:uppercase;border-top:0;border-bottom:2px solid var(--ink)}
 .t td.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.ct td.c{font-weight:700}
+.ct .flag{display:inline-block;width:1.7em;font-size:1.15em;text-align:center;margin-right:4px}
+.ct .who{display:block;font-weight:400;font-size:.76rem;color:var(--muted);white-space:normal;max-width:22em;padding-left:calc(1.7em + 4px)}
+.ct td.w{color:var(--good);font-weight:700}.ct td.l{color:var(--bad);font-weight:700}.ct td.d{color:var(--muted)}
+.wdl{display:flex;width:150px;height:10px;border:1px solid var(--line);background:var(--field);overflow:hidden;border-radius:1px}
+.wdl i{display:block;height:100%;transform-origin:left;animation:barfill .95s cubic-bezier(.2,.8,.2,1) var(--d,0s) backwards}
+.wdl .W{background:var(--s3)}.wdl .D{background:var(--s2)}.wdl .L{background:var(--pen)}
+.ct tr.unk td{color:var(--muted)}
+@media (max-width:560px){.wdl{width:52px}.ct .who{max-width:9em}.t.ct th,.t.ct td{padding-right:10px}}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .habits{display:grid;gap:20px}
 .hb{display:grid;gap:7px}
 .hb-go{justify-self:start;margin-top:2px;font-size:.78rem}
@@ -366,7 +376,7 @@ table.t{border-collapse:collapse;font-size:.88rem;width:100%}
   <header class="mast">
     <h1>Blunder<span class="nag" aria-hidden="true">??</span><span class="lab"> Lab</span></h1>
     <div class="mast-side">
-      <div class="navrow"><nav class="nav" aria-label="Pages"><span class="nav-ink" id="navink" aria-hidden="true"></span><a href="#/report" data-go="report">Report</a><a href="#/train" data-go="train">Train</a><a href="#/progress" data-go="progress">Progress</a><a href="#/habits" data-go="habits">Habits</a><a href="#/games" data-go="games">Games</a></nav><button id="snd" class="small" type="button" aria-pressed="false">Sound off</button></div>
+      <div class="navrow"><nav class="nav" aria-label="Pages"><span class="nav-ink" id="navink" aria-hidden="true"></span><a href="#/report" data-go="report">Report</a><a href="#/train" data-go="train">Train</a><a href="#/progress" data-go="progress">Progress</a><a href="#/habits" data-go="habits">Habits</a><a href="#/games" data-go="games">Games</a><a href="#/countries" data-go="countries">Countries</a></nav><button id="snd" class="small" type="button" aria-pressed="false">Sound off</button></div>
       <p class="intro">Your recent games from chess.com or Lichess, checked by Stockfish in your browser. The biggest swings become puzzles: find the move you missed.</p>
     </div>
   </header>
@@ -512,6 +522,18 @@ table.t{border-collapse:collapse;font-size:.88rem;width:100%}
     <div class="ph"><h2 id="gm-h">Games</h2><span class="eyebrow">newest first</span></div>
     <div class="games" id="games"><div class="empty">No games analyzed yet.</div></div>
   </section>
+
+  <section class="panel" id="countries" data-page="countries" aria-labelledby="ct-h">
+    <div class="ph"><h2 id="ct-h">Countries</h2><span class="eyebrow">your record by opponent country</span></div>
+    <div class="pfilters">
+      <div class="seg" role="group" aria-label="Sort countries"><button id="cs-n" aria-pressed="true">Most played</button><button id="cs-w" aria-pressed="false">Win rate</button><button id="cs-a" aria-pressed="false">A–Z</button></div>
+      <button id="ct-retry" class="small" hidden>Try again</button>
+    </div>
+    <p class="muted" id="ct-sum" role="status"></p>
+    <div class="tablewrap"><table class="t ct" id="ct-table" hidden><thead><tr><th scope="col">Country</th><th scope="col">Games</th><th scope="col">W</th><th scope="col">D</th><th scope="col">L</th><th scope="col">Win %</th><th scope="col"><span class="sr">Record</span></th></tr></thead><tbody id="ct-body"></tbody></table></div>
+    <div class="empty" id="ct-empty">Analyze some games and this will show your record against each country.</div>
+    <p class="note">Each opponent's country is whatever they set on their chess.com or Lichess profile, so it may not be where they live, and some players leave it blank. Only your saved, analyzed games are counted here.</p>
+  </section>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
@@ -588,6 +610,7 @@ async function load(){
     if(last.depth)$("depth").value=last.depth;
     state.order=(last.order||[]).filter(k=>state.games[k]);
   }
+  const cc=await dbGet("meta","countries");if(cc){cty.map=cc.map||{};cty.names=cc.names||{}}
   updateSaved();
 }
 function updateSaved(){
@@ -1645,10 +1668,10 @@ function renderProgress(){
   if(prog.table)renderTables();else renderCharts();
   $("coverage").textContent=prog.note||coverageText();
 }
-const savePrefs=()=>dbPut("meta",{k:"prefs",range:prog.range,mode:prog.mode,hidden:prog.hidden,hband:prog.hband,snd:Snd.on});
+const savePrefs=()=>dbPut("meta",{k:"prefs",range:prog.range,mode:prog.mode,hidden:prog.hidden,hband:prog.hband,snd:Snd.on,csort:cty.sort});
 async function loadPrefs(){
   const p=await dbGet("meta","prefs");
-  if(p){prog.range=p.range||3;prog.mode=p.mode||"rating";prog.hidden=p.hidden||{};prog.hband=p.hband||"auto";$("hband").value=prog.hband;Snd.on=!!p.snd;syncSnd();$("range").value=String(prog.range)}
+  if(p){prog.range=p.range||3;prog.mode=p.mode||"rating";prog.hidden=p.hidden||{};prog.hband=p.hband||"auto";$("hband").value=prog.hband;Snd.on=!!p.snd;syncSnd();if(["n","w","a"].includes(p.csort))cty.sort=p.csort;$("range").value=String(prog.range)}
 }
 $("range").onchange=()=>{prog.range=parseInt($("range").value,10);prog.note="";savePrefs();refreshRatings()};
 $("mrating").onclick=()=>{prog.mode="rating";savePrefs();renderProgress()};
@@ -1811,7 +1834,7 @@ function showGameHabits(p){
 }
 
 /* ---------- pages ---------- */
-const PAGES=["report","train","progress","habits","games"],PAGE_TITLE={report:"Report",train:"Train",progress:"Progress",habits:"Habit check",games:"Games"};
+const PAGES=["report","train","progress","habits","games","countries"],PAGE_TITLE={report:"Report",train:"Train",progress:"Progress",habits:"Habit check",games:"Games",countries:"Countries"};
 function route(){
   let h=(location.hash||"").replace(/^#\/?/,"");if(!PAGES.includes(h))h="report";
   document.querySelectorAll("[data-page]").forEach(e=>{e.hidden=e.dataset.page!==h});
@@ -1821,6 +1844,7 @@ function route(){
   placeInk();
   if(h==="progress"){$("rhost")._prev=null;$("ahost")._prev=null;renderProgress()}
   if(h==="habits")renderHabits();
+  if(h==="countries")openCountries();
 }
 function placeInk(){
   const a=document.querySelector(".nav a[aria-current]"),ink=$("navink");if(!a||!ink)return;
@@ -1831,6 +1855,112 @@ const syncSnd=()=>{const b=$("snd");b.setAttribute("aria-pressed",String(Snd.on)
 $("snd").onclick=()=>{Snd.on=!Snd.on;syncSnd();savePrefs();if(Snd.on){Snd.click();setTimeout(()=>Snd.pen(),120)}};
 function go(p){if(location.hash==="#/"+p)route();else location.hash="#/"+p}
 window.addEventListener("hashchange",()=>{route();window.scrollTo(0,0)});
+
+/* ---------- countries ---------- */
+const cty={map:{},names:{},sort:"n",busy:false,fail:0,limited:false,done:0,total:0};
+const lc=s=>String(s||"").toLowerCase();
+const saveCty=()=>persist?dbPut("meta",{k:"countries",map:cty.map,names:cty.names}):0;
+function oppOf(g){return g.color==="w"?g.black:g.white}
+const gsite=g=>/lichess\.org/.test(g.link||"")?"lichess":"chesscom";
+const ckey=g=>gsite(g)+":"+lc(oppOf(g));
+const LI_UK={"GB-ENG":"England","GB-SCT":"Scotland","GB-WLS":"Wales","GB-NIR":"Northern Ireland"};
+function ctyGames(){const pre=lc(state.user)+"|";return Object.values(state.games).filter(g=>!g.sample&&g.key.startsWith(pre)&&oppOf(g))}
+function ctyName(code){
+  if(!code)return "Unknown";
+  if(cty.names[code])return cty.names[code];
+  if(LI_UK[code])return LI_UK[code];
+  try{const n=new Intl.DisplayNames(["en"],{type:"region"}).of(code);if(n&&n!==code)return n}catch(e){}
+  return code;
+}
+function ctyFlag(code){return /^[A-Z]{2}$/.test(code)&&!/^X/.test(code)?String.fromCodePoint(...[...code].map(c=>127397+c.charCodeAt(0))):"🌐"}
+async function lookupCountries(){
+  if(cty.busy)return;
+  const need=[...new Set(ctyGames().map(ckey))].filter(k=>!(k in cty.map));
+  cty.fail=0;cty.limited=false;cty.done=0;cty.total=need.length;
+  if(!need.length)return;
+  cty.busy=true;renderCountries();
+  const cc=need.filter(k=>k.startsWith("chesscom:")),li=need.filter(k=>k.startsWith("lichess:"));
+  let i=0,sinceSave=0;
+  async function worker(){
+    while(i<cc.length&&!cty.limited){
+      const k=cc[i++],u=k.slice(9);
+      try{
+        const r=await fetch("https://api.chess.com/pub/player/"+encodeURIComponent(u));
+        if(r.status===404||r.status===410){cty.map[k]=""}
+        else if(r.status===429){cty.limited=true;break}
+        else if(!r.ok){cty.fail++}
+        else{const j=await r.json();const m=/\/country\/([A-Za-z]{2})\/?$/.exec(j&&j.country||"");cty.map[k]=m?m[1].toUpperCase():""}
+      }catch(e){cty.fail++}
+      cty.done++;
+      if(++sinceSave>=5){sinceSave=0;renderCountries()}
+    }
+  }
+  /* Lichess has a bulk endpoint: up to 300 ids per request; accounts it can't find are simply left out */
+  async function lichess(){
+    for(let n=0;n<li.length&&!cty.limited;n+=100){
+      const chunk=li.slice(n,n+100),ids=chunk.map(k=>k.slice(8));
+      try{
+        const r=await fetch("https://lichess.org/api/users",{method:"POST",headers:{"Content-Type":"text/plain"},body:ids.join(",")});
+        if(r.status===429){cty.limited=true;break}
+        if(!r.ok){cty.fail++;continue}
+        const arr=await r.json(),got={};
+        (Array.isArray(arr)?arr:[]).forEach(x=>{const f=x&&x.profile&&x.profile.flag||"";got[lc(x.id||x.username)]=/^[A-Z]{2}$/.test(f)||LI_UK[f]?f:""});
+        chunk.forEach(k=>{cty.map[k]=got[k.slice(8)]||""});
+      }catch(e){cty.fail++}
+      cty.done+=chunk.length;renderCountries();
+    }
+  }
+  await Promise.all([worker(),worker(),worker(),worker(),lichess()]);
+  /* chess.com-only codes (England, Scotland…) aren't ISO: get their names once */
+  const odd=[...new Set(Object.values(cty.map).filter(c=>c&&!cty.names[c]&&ctyName(c)===c))];
+  for(const c of odd){try{const r=await fetch("https://api.chess.com/pub/country/"+c);if(r.ok){const j=await r.json();if(j&&j.name)cty.names[c]=j.name}}catch(e){}}
+  cty.busy=false;saveCty();renderCountries();
+}
+function openCountries(){renderCountries();lookupCountries()}
+function renderCountries(){
+  const body=$("ct-body"),tbl=$("ct-table"),empty=$("ct-empty"),sum=$("ct-sum");if(!body)return;
+  body.textContent="";$("ct-retry").hidden=true;
+  [["n","cs-n"],["w","cs-w"],["a","cs-a"]].forEach(([k,id])=>$(id).setAttribute("aria-pressed",String(cty.sort===k)));
+  const games=ctyGames();
+  if(!games.length){tbl.hidden=true;empty.hidden=false;sum.textContent="";return}
+  const rows={},pending=new Set();
+  for(const g of games){
+    const u=ckey(g);
+    if(!(u in cty.map)){pending.add(u);continue}
+    const code=cty.map[u],nk=code?ctyName(code):"",r=rows[nk]||(rows[nk]={code,W:0,D:0,L:0,n:0,opps:new Set()});
+    r[g.result==="W"?"W":g.result==="L"?"L":"D"]++;r.n++;r.opps.add(oppOf(g));
+  }
+  let list=Object.values(rows);
+  const known=list.filter(r=>r.code),unk=list.find(r=>!r.code);
+  const rate=r=>r.W/r.n;
+  known.sort(cty.sort==="w"?(a,b)=>rate(b)-rate(a)||b.n-a.n:cty.sort==="a"?(a,b)=>ctyName(a.code).localeCompare(ctyName(b.code)):(a,b)=>b.n-a.n||rate(b)-rate(a));
+  list=unk?[...known,unk]:known;
+  empty.hidden=!!list.length;tbl.hidden=!list.length;
+  let ri=0;
+  for(const r of list){
+    const tr=mk("tr",r.code?"":"unk",null,body);
+    const c=mk("td","c",null,tr);
+    const f=mk("span","flag",r.code?ctyFlag(r.code):"?",c);f.setAttribute("aria-hidden","true");
+    c.append(r.code?ctyName(r.code):"Not listed");
+    const names=[...r.opps].sort((a,b)=>a.localeCompare(b,undefined,{sensitivity:"base"}));
+    mk("span","who",names.slice(0,4).join(", ")+(names.length>4?` +${names.length-4} more`:""),c);
+    mk("td","num",String(r.n),tr);mk("td","num w",String(r.W),tr);mk("td","num d",String(r.D),tr);mk("td","num l",String(r.L),tr);
+    mk("td","num",Math.round(r.W/r.n*100)+"%",tr);
+    const bc=mk("td",null,null,tr),bar=mk("div","wdl",null,bc);bar.setAttribute("role","img");bar.setAttribute("aria-label",`${r.W} won, ${r.D} drawn, ${r.L} lost`);
+    [["W",r.W],["D",r.D],["L",r.L]].forEach(([k,v])=>{if(v){const i=mk("i",k,null,bar);i.style.width=(v/r.n*100)+"%";i.style.setProperty("--d",(ri*.06).toFixed(2)+"s")}});
+    ri++;
+  }
+  const opps=new Set(games.map(ckey)),cn=known.length;
+  let t=`${games.length} game${games.length===1?"":"s"} against ${opps.size} player${opps.size===1?"":"s"}`+(cn?` from ${cn} countr${cn===1?"y":"ies"}.`:".");
+  if(cty.busy)t+=` Looking up countries… ${cty.done} of ${cty.total}.`;
+  else if(pending.size){
+    t+=cty.limited?` chess.com asked us to slow down, so ${pending.size} player${pending.size===1?"":"s"} aren't looked up yet.`:` Couldn't reach chess.com for ${pending.size} player${pending.size===1?"":"s"}.`;
+    $("ct-retry").hidden=false;
+  }
+  sum.textContent=t;
+}
+[["cs-n","n"],["cs-w","w"],["cs-a","a"]].forEach(([id,k])=>$(id).onclick=()=>{cty.sort=k;savePrefs();renderCountries()});
+$("ct-retry").onclick=lookupCountries;
 
 /* ---------- habit panel ---------- */
 function renderHabits(){
@@ -1986,7 +2116,7 @@ $("clear").onclick=async()=>{
   if(!clearArm){clearArm=setTimeout(()=>{clearArm=0;b.textContent="Clear saved data"},4000);b.textContent="Click again to erase";return}
   clearTimeout(clearArm);clearArm=0;b.textContent="Clear saved data";
   for(const s of STORES)await dbClear(s);
-  state.games={};state.order=[];state.solved={};state.puzzles=[];state.cur=-1;
+  state.games={};state.order=[];state.solved={};state.puzzles=[];state.cur=-1;cty.map={};cty.names={};
   renderAll();updateSaved();setMsg("Saved games, puzzles and progress erased.");
 };
 $("stop").onclick=()=>{stopFlag=true;setMsg("Stopping after the current position…")};
